@@ -11,6 +11,16 @@ DELAY_BETWEEN_PAGES = 2.0  # Seconds to wait between page loads (increase if get
 MAX_PAGES_PER_SEARCH = 3  # Maximum pages to scrape per category
 TIMEOUT_MS = 30000  # Page load timeout in milliseconds
 
+# Parallel processing settings
+WORKERS = 150  # Number of parallel browser workers
+MAX_RETRIES = 3  # Number of retries per failed request
+RETRY_DELAY = 5.0  # Base delay for exponential backoff (seconds)
+BROWSER_POOL_SIZE = 150  # Number of browser instances to keep in pool (usually same as WORKERS)
+
+# Chunked output settings
+CHUNK_OUTPUT = False  # Set to True to output CSVs in chunks of 50k rows
+CHUNK_SIZE = 50000  # Number of rows per chunk file
+
 # Search categories and locations
 # Format: {"term": "search term", "location": "City, State" or "United States"}
 SEARCH_CATEGORIES = [
@@ -45,9 +55,9 @@ EASTERN_STATES = [
 ]
 
 # Proxy settings (to avoid IP bans)
-USE_PROXIES = False  # Set to True to enable proxy rotation
+USE_PROXIES = True  # Set to True to enable proxy rotation
 PROXY_FILE = "proxies.txt"  # Path to proxy list file
-VALIDATE_PROXIES = True  # Validate proxies before use (slower startup)
+VALIDATE_PROXIES = False  # Validate proxies before use (slower startup)
 
 # Paid proxy service settings (alternative to proxy file)
 # Set these in environment variables for security:

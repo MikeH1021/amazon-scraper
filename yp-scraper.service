@@ -1,0 +1,16 @@
+[Unit]
+Description=Yellow Pages Scraper Pro - Production Server
+After=network.target
+
+[Service]
+User=mike
+Group=mike
+WorkingDirectory=/home/mike/yellow-pages-scraper
+Environment="PATH=/home/mike/yellow-pages-scraper/venv/bin"
+Environment="SECRET_KEY=yp-scraper-production-key-a7f3b9c2d8e4"
+ExecStart=/home/mike/yellow-pages-scraper/venv/bin/gunicorn --worker-class gevent --workers 4 --bind 0.0.0.0:5001 --timeout 300 --access-logfile /home/mike/yellow-pages-scraper/access.log --error-logfile /home/mike/yellow-pages-scraper/error.log web_app:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -52,3 +52,4 @@ tmp/
 # Backup files
 *.bak
 *.backup
+users.db
