@@ -1,58 +1,44 @@
 """
-Configuration file for Yellow Pages Scraper
+Configuration file for Amazon Brand Scraper
 Modify these settings to customize scraper behavior
 """
 
 # Browser settings
-HEADLESS_MODE = False  # Set to True to run browser in background
-DELAY_BETWEEN_PAGES = 2.0  # Seconds to wait between page loads (increase if getting blocked)
+HEADLESS_MODE = True  # Set to False to see browser activity
+DELAY_BETWEEN_PAGES = 3.0  # Base seconds between page loads (higher for Amazon)
+JITTER_MIN = 1.0  # Minimum random jitter added to delay
+JITTER_MAX = 4.0  # Maximum random jitter added to delay
 
 # Scraping settings
-MAX_PAGES_PER_SEARCH = 3  # Maximum pages to scrape per category
+MAX_PAGES_PER_SEARCH = 3  # Maximum search result pages per keyword
 TIMEOUT_MS = 30000  # Page load timeout in milliseconds
+DETAIL_PAGES = True  # Scrape product detail pages for BSR/brand data
 
-# Parallel processing settings
-WORKERS = 150  # Number of parallel browser workers
+# Parallel processing settings (conservative for Amazon)
+WORKERS = 5  # Number of parallel browser workers
 MAX_RETRIES = 3  # Number of retries per failed request
-RETRY_DELAY = 5.0  # Base delay for exponential backoff (seconds)
-BROWSER_POOL_SIZE = 150  # Number of browser instances to keep in pool (usually same as WORKERS)
+RETRY_DELAY = 10.0  # Base delay for exponential backoff (seconds)
+BROWSER_POOL_SIZE = 5  # Number of browser instances in pool
+MAX_CONCURRENT_REQUESTS = 10  # Global max concurrent requests (semaphore cap)
+DETAIL_PAGE_CONCURRENCY = 3  # Max concurrent detail page requests
 
-# Chunked output settings
+# Anti-detection settings
+CAPTCHA_PAUSE_SECONDS = 30  # Pause duration when CAPTCHA detected
+DECOY_INTERVAL = 10  # Do a decoy request every N requests
+STAGGER_DELAY = 2.0  # Max random delay factor before workers start
+REQUEST_JITTER = 1.0  # Random jitter for request timing
+
+# Default category and preset
+DEFAULT_CATEGORY = "health"
+DEFAULT_PRESET = "ally_nutra"
+
+# Output settings
+OUTPUT_FORMAT = "both"  # Options: csv, json, both
 CHUNK_OUTPUT = False  # Set to True to output CSVs in chunks of 50k rows
 CHUNK_SIZE = 50000  # Number of rows per chunk file
 
-# Search categories and locations
-# Format: {"term": "search term", "location": "City, State" or "United States"}
-SEARCH_CATEGORIES = [
-    {"term": "building supply", "location": "United States"},
-    {"term": "shutters", "location": "United States"},
-    {"term": "millwork", "location": "United States"},
-    {"term": "lumber", "location": "United States"},
-    {"term": "architects", "location": "United States"},
-]
-
-# You can also search specific locations:
-# SEARCH_CATEGORIES = [
-#     {"term": "building supply", "location": "Miami, FL"},
-#     {"term": "shutters", "location": "New York, NY"},
-#     {"term": "lumber", "location": "Los Angeles, CA"},
-# ]
-
-# Output settings
-SAVE_INDIVIDUAL_CATEGORIES = True  # Save separate CSV for each category
-SAVE_COMBINED_RESULTS = True  # Save one CSV with all results
-SAVE_EASTERN_STATES_ONLY = True  # Save filtered results for eastern states
-
 # Output directory (leave empty for current directory)
 OUTPUT_DIR = ""
-
-# States east of Colorado (for filtering)
-EASTERN_STATES = [
-    'AL', 'AR', 'CT', 'DE', 'FL', 'GA', 'IL', 'IN', 'IA', 'KS', 'KY',
-    'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'NE', 'NH', 'NJ',
-    'NY', 'NC', 'ND', 'OH', 'OK', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX',
-    'VT', 'VA', 'WV', 'WI', 'DC'
-]
 
 # Proxy settings (to avoid IP bans)
 USE_PROXIES = True  # Set to True to enable proxy rotation

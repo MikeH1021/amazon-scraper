@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yellow Pages Scraper Pro</title>
+    <title>Amazon Brand Scraper Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
@@ -38,16 +38,8 @@
             --glass-border-light: rgba(255, 255, 255, 0.12);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--dark);
@@ -57,14 +49,8 @@
             line-height: 1.6;
         }
 
-        /* Animated mesh gradient background */
         .bg-mesh {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -2;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2;
             background:
                 radial-gradient(ellipse 80% 50% at 20% -20%, rgba(139, 92, 246, 0.15), transparent),
                 radial-gradient(ellipse 60% 40% at 80% 0%, rgba(244, 114, 182, 0.1), transparent),
@@ -72,167 +58,27 @@
                 var(--dark);
         }
 
-        /* Starfield Canvas */
-        #starfield {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            pointer-events: none;
-        }
+        #starfield { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 
-        /* Hyperspace flash overlay */
         .hyperspace-flash {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;
             background: radial-gradient(ellipse at center, rgba(255,255,255,0.3) 0%, transparent 70%);
-            opacity: 0;
-            transition: opacity 0.1s ease;
+            opacity: 0; transition: opacity 0.1s ease;
         }
+        .hyperspace-flash.active { animation: hyperspaceFlash 0.8s ease-out forwards; }
+        @keyframes hyperspaceFlash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
 
-        .hyperspace-flash.active {
-            animation: hyperspaceFlash 0.8s ease-out forwards;
-        }
-
-        @keyframes hyperspaceFlash {
-            0% { opacity: 0; }
-            15% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
-        /* Vignette effect during hyperspace */
         .hyperspace-vignette {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;
             background: radial-gradient(ellipse at center, transparent 20%, rgba(139, 92, 246, 0.12) 60%, rgba(88, 28, 135, 0.25) 100%);
-            opacity: 0;
-            transition: opacity 0.8s ease;
+            opacity: 0; transition: opacity 0.8s ease;
         }
+        .hyperspace-vignette.active { opacity: 1; }
 
-        .hyperspace-vignette.active {
-            opacity: 1;
-        }
-
-        /* Hyperspace tunnel rings effect */
-        .hyperspace-tunnel {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 200vmax;
-            height: 200vmax;
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            background:
-                radial-gradient(circle, transparent 0%, transparent 10%, rgba(139, 92, 246, 0.03) 10.5%, transparent 11%),
-                radial-gradient(circle, transparent 0%, transparent 20%, rgba(139, 92, 246, 0.03) 20.5%, transparent 21%),
-                radial-gradient(circle, transparent 0%, transparent 30%, rgba(139, 92, 246, 0.02) 30.5%, transparent 31%),
-                radial-gradient(circle, transparent 0%, transparent 40%, rgba(139, 92, 246, 0.02) 40.5%, transparent 41%),
-                radial-gradient(circle, transparent 0%, transparent 50%, rgba(139, 92, 246, 0.01) 50.5%, transparent 51%);
-        }
-
-        .hyperspace-tunnel.active {
-            opacity: 1;
-            animation: tunnelPulse 0.5s ease-in-out infinite alternate;
-        }
-
-        @keyframes tunnelPulse {
-            0% { transform: translate(-50%, -50%) scale(1); }
-            100% { transform: translate(-50%, -50%) scale(1.02); }
-        }
-
-        /* Screen shake during jump */
-        .screen-shake {
-            animation: screenShake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-        }
-
-        @keyframes screenShake {
-            0%, 100% { transform: translateX(0); }
-            10% { transform: translateX(-4px) translateY(2px); }
-            20% { transform: translateX(4px) translateY(-2px); }
-            30% { transform: translateX(-3px) translateY(1px); }
-            40% { transform: translateX(3px) translateY(-1px); }
-            50% { transform: translateX(-2px) translateY(1px); }
-            60% { transform: translateX(2px) translateY(-1px); }
-            70% { transform: translateX(-1px); }
-            80% { transform: translateX(1px); }
-        }
-
-        /* Blue shift glow during hyperspace */
-        .hyperspace-glow {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0;
-            background: radial-gradient(ellipse 50% 50% at center, rgba(96, 165, 250, 0.1) 0%, transparent 70%);
-            transition: opacity 0.3s ease;
-        }
-
-        .hyperspace-glow.active {
-            opacity: 1;
-            animation: glowPulse 1s ease-in-out infinite alternate;
-        }
-
-        @keyframes glowPulse {
-            0% { opacity: 0.7; filter: blur(30px); }
-            100% { opacity: 1; filter: blur(50px); }
-        }
-
-        /* Glow orbs */
-        .glow-orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            z-index: -1;
-            animation: orbFloat 20s ease-in-out infinite;
-        }
-
-        .glow-orb-1 {
-            width: 400px;
-            height: 400px;
-            background: var(--primary-glow);
-            top: -100px;
-            right: -100px;
-            animation-delay: 0s;
-        }
-
-        .glow-orb-2 {
-            width: 300px;
-            height: 300px;
-            background: var(--secondary-glow);
-            bottom: -50px;
-            left: -50px;
-            animation-delay: -5s;
-        }
-
-        .glow-orb-3 {
-            width: 250px;
-            height: 250px;
-            background: var(--accent-glow);
-            top: 50%;
-            left: 50%;
-            animation-delay: -10s;
-        }
-
+        .glow-orb { position: fixed; border-radius: 50%; filter: blur(80px); z-index: -1; animation: orbFloat 20s ease-in-out infinite; }
+        .glow-orb-1 { width: 400px; height: 400px; background: var(--primary-glow); top: -100px; right: -100px; }
+        .glow-orb-2 { width: 300px; height: 300px; background: var(--secondary-glow); bottom: -50px; left: -50px; animation-delay: -5s; }
+        .glow-orb-3 { width: 250px; height: 250px; background: var(--accent-glow); top: 50%; left: 50%; animation-delay: -10s; }
         @keyframes orbFloat {
             0%, 100% { transform: translate(0, 0) scale(1); }
             25% { transform: translate(50px, -30px) scale(1.1); }
@@ -240,3224 +86,1070 @@
             75% { transform: translate(-50px, -20px) scale(1.05); }
         }
 
-        .container {
-            max-width: 1500px;
-            margin: 0 auto;
-            padding: 24px;
-            position: relative;
-            z-index: 1;
-        }
+        .container { max-width: 1500px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
 
-        /* Header */
         .header {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            padding: 24px 32px;
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            margin-bottom: 28px;
-            animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
+            display: flex; align-items: center; gap: 24px; padding: 24px 32px;
+            background: var(--glass); backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
+            border-radius: 24px; margin-bottom: 28px; animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative; overflow: hidden;
         }
-
         .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--primary-light), var(--secondary), transparent);
-            opacity: 0.5;
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary-light), var(--secondary), transparent); opacity: 0.5;
         }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
 
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-40px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .logo-wrapper {
-            position: relative;
-        }
-
-        .logo {
-            width: 72px;
-            height: 72px;
-            border-radius: 18px;
-            object-fit: contain;
-            background: linear-gradient(135deg, var(--white) 0%, #f0f0f0 100%);
-            padding: 10px;
-            box-shadow:
-                0 0 0 1px rgba(255,255,255,0.1),
-                0 8px 40px rgba(139, 92, 246, 0.3),
-                0 0 60px rgba(139, 92, 246, 0.2);
+        .logo { width: 72px; height: 72px; border-radius: 18px; object-fit: contain;
+            background: linear-gradient(135deg, var(--white) 0%, #f0f0f0 100%); padding: 10px;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 8px 40px rgba(139, 92, 246, 0.3);
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        .logo:hover {
-            transform: scale(1.05) rotate(-2deg);
-            box-shadow:
-                0 0 0 1px rgba(255,255,255,0.2),
-                0 12px 50px rgba(139, 92, 246, 0.4),
-                0 0 80px rgba(139, 92, 246, 0.3);
-        }
+        .logo:hover { transform: scale(1.05) rotate(-2deg); }
 
         .header-text h1 {
-            font-size: 28px;
-            font-weight: 800;
+            font-size: 28px; font-weight: 800;
             background: linear-gradient(135deg, var(--white) 0%, var(--gray-300) 50%, var(--primary-light) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 6px;
-            letter-spacing: -0.5px;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 6px; letter-spacing: -0.5px;
         }
+        .header-text p { color: var(--gray-400); font-size: 14px; }
 
-        .header-text p {
-            color: var(--gray-400);
-            font-size: 14px;
-            font-weight: 400;
-        }
-
-        .header-stats {
-            margin-left: auto;
-            display: flex;
-            gap: 16px;
-        }
-
+        .header-stats { margin-left: auto; display: flex; gap: 16px; }
         .header-stat {
-            text-align: center;
-            padding: 14px 24px;
-            background: var(--dark-elevated);
-            border-radius: 16px;
-            border: 1px solid var(--glass-border);
+            text-align: center; padding: 14px 24px; background: var(--dark-elevated);
+            border-radius: 16px; border: 1px solid var(--glass-border);
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
         }
-
-        .header-stat::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, var(--primary-glow), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .header-stat:hover {
-            transform: translateY(-2px);
-            border-color: var(--primary);
-        }
-
-        .header-stat:hover::before {
-            opacity: 0.1;
-        }
-
+        .header-stat:hover { transform: translateY(-2px); border-color: var(--primary); }
         .header-stat-value {
-            font-size: 26px;
-            font-weight: 700;
+            font-size: 26px; font-weight: 700;
             background: linear-gradient(135deg, var(--primary-light) 0%, var(--accent) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            position: relative;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
+        .header-stat-label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-top: 4px; }
 
-        .header-stat-label {
-            font-size: 11px;
-            color: var(--gray-500);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-            margin-top: 4px;
-        }
-
-        .header-user {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-left: 20px;
-            padding-left: 20px;
-            border-left: 1px solid var(--glass-border);
-        }
-
+        .header-user { display: flex; align-items: center; gap: 12px; margin-left: 20px; padding-left: 20px; border-left: 1px solid var(--glass-border); }
         .user-info-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 18px;
-            background: var(--dark-elevated);
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 500;
+            display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+            background: var(--dark-elevated); border-radius: 12px; font-size: 14px; font-weight: 500;
             border: 1px solid var(--glass-border);
-            transition: all 0.3s ease;
         }
-
-        .user-info-badge:hover {
-            border-color: var(--primary);
-        }
-
-        .user-info-badge svg {
-            color: var(--primary-light);
-        }
+        .user-info-badge svg { color: var(--primary-light); }
 
         .header-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            background: var(--dark-elevated);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--gray-300);
-            text-decoration: none;
+            display: flex; align-items: center; gap: 8px; padding: 10px 18px;
+            background: var(--dark-elevated); border: 1px solid var(--glass-border); border-radius: 12px;
+            font-size: 13px; font-weight: 600; color: var(--gray-300); text-decoration: none;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
         }
+        .header-btn:hover { border-color: var(--primary); color: var(--white); transform: translateY(-2px); }
 
-        .header-btn::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-bottom: 28px; }
 
-        .header-btn:hover {
-            border-color: var(--primary);
-            color: var(--white);
-            transform: translateY(-2px);
-        }
-
-        .header-btn:hover::before {
-            opacity: 0.15;
-        }
-
-        .header-btn svg {
-            position: relative;
-            transition: transform 0.3s ease;
-        }
-
-        .header-btn:hover svg {
-            transform: rotate(15deg);
-        }
-
-        .header-btn-logout:hover {
-            border-color: var(--danger);
-        }
-
-        .header-btn-logout:hover::before {
-            background: var(--danger);
-        }
-
-        /* Main grid */
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 28px;
-            margin-bottom: 28px;
-        }
-
-        /* Panels */
         .panel {
-            background: var(--dark-card);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 32px;
-            position: relative;
-            overflow: hidden;
+            background: var(--dark-card); border: 1px solid var(--glass-border); border-radius: 24px;
+            padding: 32px; position: relative; overflow: hidden;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
         .panel::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
             background: linear-gradient(90deg, transparent, var(--glass-border-light), transparent);
         }
-
         .panel:hover {
-            transform: translateY(-4px);
-            border-color: var(--glass-border-light);
-            box-shadow:
-                0 20px 60px -20px rgba(139, 92, 246, 0.2),
-                0 0 40px -20px var(--primary-glow);
+            transform: translateY(-4px); border-color: var(--glass-border-light);
+            box-shadow: 0 20px 60px -20px rgba(139, 92, 246, 0.2);
         }
-
         .panel:nth-child(1) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
         .panel:nth-child(2) { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .panel-header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 28px;
-        }
-
+        .panel-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
         .panel-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             box-shadow: 0 8px 20px var(--primary-glow);
-            animation: iconPulse 3s ease-in-out infinite;
         }
+        .panel-icon svg { width: 24px; height: 24px; color: white; }
+        .panel-icon-secondary { background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%); box-shadow: 0 8px 20px var(--accent-glow); }
+        .panel h2 { font-size: 20px; font-weight: 700; color: var(--white); letter-spacing: -0.3px; }
+        .panel h2 small { display: block; font-size: 13px; font-weight: 400; color: var(--gray-500); }
 
-        .panel-icon svg {
-            width: 24px;
-            height: 24px;
-            color: white;
-        }
-
-        .panel-icon-secondary {
-            background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
-            box-shadow: 0 8px 20px var(--accent-glow);
-        }
-
-        @keyframes iconPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .panel h2 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--white);
-            letter-spacing: -0.3px;
-        }
-
-        .panel h2 small {
-            display: block;
-            font-size: 13px;
-            font-weight: 400;
-            color: var(--gray-500);
-        }
-
-        .btn-ai-suggest {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-        }
-
-        .btn-ai-suggest:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5);
-        }
-
-        .btn-ai-suggest svg {
-            transition: transform 0.3s ease;
-        }
-
-        .btn-ai-suggest:hover svg {
-            transform: rotate(10deg) scale(1.1);
-            margin-top: 2px;
-        }
-
-        /* Form elements */
-        .form-group {
-            margin-bottom: 24px;
-            animation: fadeInUp 0.5s ease both;
-        }
-
-        .form-group:nth-child(1) { animation-delay: 0.1s; }
-        .form-group:nth-child(2) { animation-delay: 0.15s; }
-        .form-group:nth-child(3) { animation-delay: 0.2s; }
-        .form-group:nth-child(4) { animation-delay: 0.25s; }
-        .form-group:nth-child(5) { animation-delay: 0.3s; }
-        .form-group:nth-child(6) { animation-delay: 0.35s; }
-
+        .form-group { margin-bottom: 20px; }
         .form-group label:not(.checkbox-group) {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--gray-300);
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;
+            color: var(--gray-300); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;
         }
-
-        .form-group label svg {
-            width: 16px;
-            height: 16px;
-            color: var(--primary-light);
+        .form-group label svg { width: 16px; height: 16px; color: var(--primary-light); }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%; padding: 14px 16px; background: var(--dark-elevated);
+            border: 2px solid var(--glass-border); border-radius: 14px; color: var(--white);
+            font-size: 14px; font-family: inherit; transition: all 0.3s ease;
         }
-
-        .form-group input,
-        .form-group textarea,
+        .form-group input::placeholder, .form-group textarea::placeholder { color: var(--gray-600); }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-glow); background: var(--dark-card);
+        }
+        .form-group textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
         .form-group select {
-            width: 100%;
-            padding: 16px 18px;
-            background: var(--dark-elevated);
-            border: 2px solid var(--glass-border);
-            border-radius: 14px;
-            color: var(--white);
-            font-size: 14px;
-            font-family: inherit;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center; background-size: 18px; padding-right: 48px;
         }
+        .form-group small { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: var(--gray-500); }
 
-        .form-group input::placeholder,
-        .form-group textarea::placeholder {
-            color: var(--gray-600);
-        }
-
-        .form-group input:hover,
-        .form-group textarea:hover,
-        .form-group select:hover {
-            border-color: var(--gray-600);
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow:
-                0 0 0 4px var(--primary-glow),
-                0 0 30px -10px var(--primary-glow);
-            background: var(--dark-card);
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-            line-height: 1.6;
-        }
-
-        .form-group select {
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            background-size: 18px;
-            padding-right: 48px;
-        }
-
-        .form-group small {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 8px;
-            font-size: 12px;
-            color: var(--gray-500);
-        }
-
-        /* Checkbox styling */
         .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 16px 18px;
-            background: var(--dark-elevated);
-            border-radius: 14px;
-            border: 2px solid var(--glass-border);
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
+            display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+            background: var(--dark-elevated); border-radius: 14px; border: 2px solid var(--glass-border);
+            cursor: pointer; transition: all 0.3s ease;
         }
+        .checkbox-group:hover { border-color: var(--primary); }
+        .checkbox-group input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer; }
+        .checkbox-group span { font-size: 14px; font-weight: 600; color: var(--gray-300); }
 
-        .checkbox-group::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, var(--primary-glow), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
+        .radio-group { display: flex; gap: 12px; }
+        .radio-option {
+            flex: 1; padding: 14px 16px; background: var(--dark-elevated); border: 2px solid var(--glass-border);
+            border-radius: 14px; cursor: pointer; text-align: center; transition: all 0.3s ease;
+            font-size: 14px; font-weight: 600; color: var(--gray-400);
         }
+        .radio-option:hover { border-color: var(--gray-600); }
+        .radio-option.active { border-color: var(--primary); color: var(--white); background: rgba(139, 92, 246, 0.1); }
+        .radio-option input { display: none; }
 
-        .checkbox-group:hover {
-            border-color: var(--primary);
+        .collapsible-header {
+            display: flex; align-items: center; justify-content: space-between; padding: 14px 16px;
+            background: var(--dark-elevated); border: 2px solid var(--glass-border); border-radius: 14px;
+            cursor: pointer; transition: all 0.3s ease; margin-bottom: 0;
         }
-
-        .checkbox-group:hover::before {
-            opacity: 0.1;
+        .collapsible-header:hover { border-color: var(--primary); }
+        .collapsible-header .arrow { transition: transform 0.3s ease; color: var(--gray-400); }
+        .collapsible-header.open .arrow { transform: rotate(180deg); }
+        .collapsible-header.open { border-radius: 14px 14px 0 0; margin-bottom: 0; border-bottom: none; }
+        .collapsible-body {
+            display: none; padding: 20px 16px; background: var(--dark-elevated);
+            border: 2px solid var(--glass-border); border-top: none; border-radius: 0 0 14px 14px;
         }
+        .collapsible-body.open { display: block; }
+        .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .filter-row .form-group { margin-bottom: 0; }
+        .filter-row label { font-size: 12px !important; margin-bottom: 6px !important; }
+        .filter-row input { padding: 10px 12px; font-size: 13px; }
 
-        .checkbox-group input[type="checkbox"] {
-            width: 22px;
-            height: 22px;
-            accent-color: var(--primary);
-            cursor: pointer;
-            position: relative;
-        }
-
-        .checkbox-group span {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--gray-300);
-            position: relative;
-        }
-
-        .checkbox-group small {
-            margin-left: auto;
-            font-size: 11px;
-            color: var(--primary-light);
-            background: rgba(139, 92, 246, 0.15);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: 600;
-            position: relative;
-        }
-
-        /* Buttons */
-        .btn-group {
-            display: flex;
-            gap: 14px;
-            margin-top: 28px;
-        }
-
+        .btn-group { display: flex; gap: 14px; margin-top: 24px; }
         .btn {
-            flex: 1;
-            padding: 18px 28px;
-            border: none;
-            border-radius: 14px;
-            font-size: 15px;
-            font-weight: 700;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            position: relative;
-            overflow: hidden;
+            flex: 1; padding: 16px 24px; border: none; border-radius: 14px; font-size: 15px; font-weight: 700;
+            font-family: inherit; cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; align-items: center; justify-content: center; gap: 10px;
         }
+        .btn svg { transition: transform 0.3s ease; }
+        .btn:hover svg { transform: scale(1.1); }
+        .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: var(--white); box-shadow: 0 4px 20px var(--primary-glow); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 40px var(--primary-glow); }
+        .btn-danger { background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: var(--white); box-shadow: 0 4px 20px var(--danger-glow); }
+        .btn-danger:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 40px var(--danger-glow); }
+        .btn-secondary { background: var(--dark-elevated); color: var(--gray-300); border: 2px solid var(--glass-border); }
+        .btn-secondary:hover { border-color: var(--primary); color: var(--white); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
 
-        .btn::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .btn:hover::before {
-            opacity: 1;
-        }
-
-        .btn svg {
-            transition: transform 0.3s ease;
-        }
-
-        .btn:hover svg {
-            transform: scale(1.1);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
-            box-shadow:
-                0 4px 20px var(--primary-glow),
-                inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow:
-                0 8px 40px var(--primary-glow),
-                inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-
-        .btn-primary:active:not(:disabled) {
-            transform: translateY(-1px);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
-            color: var(--white);
-            box-shadow:
-                0 4px 20px var(--danger-glow),
-                inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-
-        .btn-danger:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow:
-                0 8px 40px var(--danger-glow),
-                inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-
-        .btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        /* File upload */
-        .file-upload {
-            position: relative;
-        }
-
-        .file-upload input[type="file"] {
-            display: none;
-        }
-
-        .file-upload-label {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 14px;
-            padding: 32px 24px;
-            border: 2px dashed var(--glass-border);
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            text-align: center;
-            background: var(--dark-elevated);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .file-upload-label::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, var(--primary-glow), var(--accent-glow));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .file-upload-label:hover {
-            border-color: var(--primary);
-            transform: translateY(-2px);
-        }
-
-        .file-upload-label:hover::before {
-            opacity: 0.1;
-        }
-
-        .file-upload-label .upload-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 20px var(--primary-glow);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .file-upload-label:hover .upload-icon {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 30px var(--primary-glow);
-        }
-
-        .file-upload-label .upload-icon svg {
-            width: 28px;
-            height: 28px;
-            stroke: white;
-        }
-
-        .file-upload-label span {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--gray-300);
-            position: relative;
-        }
-
-        .file-upload-label small {
-            font-size: 12px;
-            color: var(--gray-500);
-            position: relative;
-        }
-
-        /* Proxy status */
-        .proxy-status-card {
-            margin-top: 24px;
-            padding: 24px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, rgba(52, 211, 153, 0.1) 0%, rgba(34, 211, 238, 0.1) 100%);
-            border: 1px solid rgba(52, 211, 153, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            animation: pulseGlow 3s ease-in-out infinite;
-        }
-
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 20px rgba(52, 211, 153, 0.1); }
-            50% { box-shadow: 0 0 30px rgba(52, 211, 153, 0.2); }
-        }
-
-        .proxy-icon {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 20px var(--success-glow);
-        }
-
-        .proxy-icon svg {
-            width: 28px;
-            height: 28px;
-            color: white;
-        }
-
-        .proxy-info h3 {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--success);
-            margin-bottom: 4px;
-        }
-
-        .proxy-info p {
-            font-size: 13px;
-            color: var(--gray-400);
-        }
-
-        .proxy-empty {
-            padding: 32px;
-            text-align: center;
-            color: var(--gray-500);
-        }
-
-        .proxy-empty svg {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 12px;
-            opacity: 0.3;
-        }
-
-        .proxy-empty p {
-            font-size: 14px;
-        }
-
-        /* Progress panel */
         .progress-panel {
-            background: var(--dark-card);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 32px;
-            margin-bottom: 28px;
-            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
+            background: var(--dark-card); border: 1px solid var(--glass-border); border-radius: 24px;
+            padding: 32px; margin-bottom: 28px; animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative; overflow: hidden;
         }
-
         .progress-panel::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
             background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
-            animation: gradientSlide 3s linear infinite;
         }
+        .progress-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+        .progress-stats { display: flex; gap: 32px; }
+        .progress-stat { text-align: center; }
+        .progress-stat-value { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, var(--primary-light), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .progress-stat-label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .progress-bar-container { height: 12px; background: var(--dark-elevated); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 8px; transition: width 0.5s ease; width: 0%; }
+        .progress-info { display: flex; justify-content: space-between; font-size: 13px; color: var(--gray-400); }
+        .phase-badge { padding: 4px 12px; background: rgba(139, 92, 246, 0.2); border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--primary-light); }
 
-        @keyframes gradientSlide {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
+        .log-panel {
+            background: var(--dark-card); border: 1px solid var(--glass-border); border-radius: 24px;
+            padding: 32px; margin-bottom: 28px;
         }
-
-        .progress-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 28px;
+        .log-panel h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--white); }
+        .log-container {
+            background: var(--dark); border: 1px solid var(--glass-border); border-radius: 14px;
+            padding: 16px; height: 300px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 13px;
         }
+        .log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03); display: flex; gap: 10px; }
+        .log-time { color: var(--gray-600); min-width: 60px; }
+        .log-msg { color: var(--gray-300); }
+        .log-entry.success .log-msg { color: var(--success); }
+        .log-entry.error .log-msg { color: var(--danger); }
+        .log-entry.info .log-msg { color: var(--accent); }
 
-        .progress-header h2 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--white);
-            margin: 0;
-        }
-
-        .running-indicator {
-            width: 14px;
-            height: 14px;
-            background: var(--success);
-            border-radius: 50%;
-            animation: pulseIndicator 1.5s ease-in-out infinite;
-            box-shadow: 0 0 20px var(--success-glow);
-        }
-
-        @keyframes pulseIndicator {
-            0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 20px var(--success-glow); }
-            50% { opacity: 0.6; transform: scale(0.85); box-shadow: 0 0 30px var(--success-glow); }
-        }
-
-        .progress-bar-container {
-            background: var(--dark-elevated);
-            border-radius: 12px;
-            height: 16px;
-            overflow: hidden;
-            margin-bottom: 28px;
-            position: relative;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent), var(--primary));
-            background-size: 300% 100%;
-            border-radius: 12px;
-            width: 0%;
-            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            animation: progressGradient 3s linear infinite;
-        }
-
-        @keyframes progressGradient {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 300% 50%; }
-        }
-
-        .progress-bar-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            animation: shimmer 1.5s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        .progress-stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 18px;
-        }
-
-        .stat {
-            text-align: center;
-            padding: 24px 18px;
-            background: var(--dark-elevated);
-            border-radius: 18px;
-            border: 1px solid var(--glass-border);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, var(--primary-glow), transparent);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .stat:hover {
-            transform: translateY(-4px);
-            border-color: var(--primary);
-        }
-
-        .stat:hover::before {
-            opacity: 0.1;
-        }
-
-        .stat-value {
-            font-size: 36px;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--white) 0%, var(--primary-light) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            position: relative;
-            line-height: 1;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: var(--gray-500);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-top: 10px;
-            font-weight: 600;
-            position: relative;
-        }
-
-        /* Download section */
-        .download-section {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 14px;
-            margin-top: 28px;
-            padding-top: 28px;
-            border-top: 1px solid var(--glass-border);
-        }
-
-        .btn-download {
-            padding: 16px 32px;
-            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
-            color: var(--white);
-            border: none;
-            border-radius: 14px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow:
-                0 4px 20px var(--success-glow),
-                inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-
-        .btn-download:hover {
-            transform: translateY(-3px);
-            box-shadow:
-                0 8px 40px var(--success-glow),
-                inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-
-        .btn-download svg {
-            animation: bounceDown 2s ease-in-out infinite;
-        }
-
-        @keyframes bounceDown {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(3px); }
-        }
-
-        /* Logs panel */
-        .logs-panel {
-            background: var(--dark-card);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 32px;
-            margin-bottom: 28px;
-            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
-        }
-
-        .logs-panel-header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 24px;
-        }
-
-        .logs-panel-header .panel-icon {
-            background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
-            box-shadow: 0 8px 20px var(--accent-glow);
-        }
-
-        .logs-panel h2 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--white);
-        }
-
-        .logs {
-            background: var(--dark);
-            border-radius: 16px;
-            padding: 24px;
-            height: 380px;
-            overflow-y: auto;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            line-height: 2;
-            border: 1px solid var(--glass-border);
-        }
-
-        .logs::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .logs::-webkit-scrollbar-track {
-            background: var(--dark-elevated);
-            border-radius: 4px;
-        }
-
-        .logs::-webkit-scrollbar-thumb {
-            background: var(--gray-700);
-            border-radius: 4px;
-        }
-
-        .logs::-webkit-scrollbar-thumb:hover {
-            background: var(--gray-600);
-        }
-
-        .log-entry {
-            padding: 6px 12px;
-            border-radius: 8px;
-            margin-bottom: 4px;
-            animation: logSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            transition: background 0.2s ease;
-        }
-
-        .log-entry:hover {
-            background: var(--dark-elevated);
-        }
-
-        @keyframes logSlide {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .log-timestamp {
-            color: var(--gray-600);
-            margin-right: 16px;
-            font-weight: 500;
-        }
-
-        .log-info { color: var(--accent); }
-        .log-success { color: var(--success); }
-        .log-error { color: var(--danger); }
-
-        /* Previous results */
         .results-panel {
-            background: var(--dark-card);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 32px;
-            margin-bottom: 28px;
-            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
-        }
-
-        .results-panel-header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 24px;
-        }
-
-        .results-panel-header .panel-icon {
-            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
-            box-shadow: 0 8px 20px rgba(251, 191, 36, 0.3);
-        }
-
-        .results-panel h2 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--white);
-        }
-
-        .result-file {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 24px;
-            background: var(--dark-elevated);
-            border-radius: 16px;
-            margin-bottom: 14px;
-            border: 1px solid var(--glass-border);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .result-file:hover {
-            border-color: var(--primary);
-            transform: translateX(8px);
-            box-shadow: -8px 0 20px var(--primary-glow);
-        }
-
-        .result-info {
-            flex: 1;
-        }
-
-        .result-name {
-            font-weight: 600;
-            color: var(--light);
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 15px;
-        }
-
-        .result-name svg {
-            color: var(--warning);
-        }
-
-        .result-meta {
-            font-size: 12px;
-            color: var(--gray-500);
-            display: flex;
-            gap: 20px;
-        }
-
-        .result-meta span {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-small {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
-            border: none;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 15px var(--primary-glow);
-        }
-
-        .btn-small:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px var(--primary-glow);
-        }
-
-        .result-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .btn-delete {
-            width: 40px;
-            height: 40px;
-            border: none;
-            border-radius: 10px;
-            background: var(--dark-card);
-            border: 1px solid var(--glass-border);
-            color: var(--gray-400);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .btn-delete:hover {
-            background: rgba(239, 68, 68, 0.15);
-            border-color: var(--danger);
-            color: var(--danger);
-            transform: scale(1.1);
-        }
-
-        .results-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 18px;
-            padding-bottom: 18px;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .results-count {
-            font-size: 14px;
-            color: var(--gray-400);
-            font-weight: 500;
-        }
-
-        .btn-clear-all {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 10px;
-            color: var(--danger);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .btn-clear-all:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: var(--danger);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 24px;
-            color: var(--gray-600);
-            font-size: 13px;
-        }
-
-        .footer a {
-            color: var(--primary-light);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .footer a:hover {
-            color: var(--primary);
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 1024px) {
-            .header {
-                flex-direction: column;
-                text-align: center;
-                gap: 20px;
-            }
-
-            .header-stats {
-                margin-left: 0;
-            }
-
-            .header-user {
-                margin-left: 0;
-                margin-top: 16px;
-                padding-left: 0;
-                border-left: none;
-                padding-top: 20px;
-                border-top: 1px solid var(--glass-border);
-                flex-wrap: wrap;
-                justify-content: center;
-                width: 100%;
-            }
-
-            .progress-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 640px) {
-            .container {
-                padding: 16px;
-            }
-
-            .header {
-                padding: 20px;
-            }
-
-            .panel {
-                padding: 24px;
-            }
-
-            .progress-stats {
-                grid-template-columns: 1fr;
-            }
-
-            .btn-group {
-                flex-direction: column;
-            }
-
-            .stat-value {
-                font-size: 28px;
-            }
-
-            .header-stats {
-                flex-direction: column;
-                gap: 12px;
-            }
-        }
-
-        /* Loading animation for buttons */
-        .btn-loading {
-            position: relative;
-            color: transparent !important;
-        }
-
-        .btn-loading::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border: 2px solid transparent;
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Tooltip styles */
-        [data-tooltip] {
-            position: relative;
-        }
-
-        [data-tooltip]::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%) translateY(-8px);
-            padding: 8px 12px;
-            background: var(--dark-elevated);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            font-size: 12px;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s ease;
-        }
-
-        [data-tooltip]:hover::after {
-            opacity: 1;
-            transform: translateX(-50%) translateY(-4px);
-        }
-
-        /* AI Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(8px);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal {
-            background: var(--dark-card);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            width: 90%;
-            max-width: 560px;
-            max-height: 90vh;
-            overflow: hidden;
-            transform: scale(0.9) translateY(20px);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .modal-overlay.active .modal {
-            transform: scale(1) translateY(0);
-        }
-
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 24px 28px;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .modal-header h3 {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--white);
-        }
-
-        .modal-header h3 .modal-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
-        }
-
-        .modal-header h3 .modal-icon svg {
-            width: 22px;
-            height: 22px;
-            color: white;
-        }
-
-        .modal-close {
-            width: 40px;
-            height: 40px;
-            border: none;
-            border-radius: 10px;
-            background: var(--dark-elevated);
-            color: var(--gray-400);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .modal-close:hover {
-            background: rgba(248, 113, 113, 0.15);
-            color: var(--danger);
-        }
-
-        .modal-body {
-            padding: 28px;
-            overflow-y: auto;
-            max-height: calc(90vh - 180px);
-        }
-
-        .modal-body p {
-            color: var(--gray-400);
-            font-size: 14px;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        .modal-body .form-group {
-            margin-bottom: 24px;
-        }
-
-        .modal-body .form-group label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--gray-300);
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .modal-body .form-group label svg {
-            width: 16px;
-            height: 16px;
-            color: var(--success);
-        }
-
-        .modal-body textarea {
-            width: 100%;
-            padding: 16px 18px;
-            background: var(--dark-elevated);
-            border: 2px solid var(--glass-border);
-            border-radius: 14px;
-            color: var(--white);
-            font-size: 14px;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 120px;
-            transition: all 0.3s ease;
-        }
-
-        .modal-body textarea::placeholder {
-            color: var(--gray-500);
-        }
-
-        .modal-body textarea:focus {
-            outline: none;
-            border-color: var(--success);
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
-        }
-
-        .modal-body .form-group small {
-            display: block;
-            margin-top: 10px;
-            font-size: 12px;
-            color: var(--gray-500);
-        }
-
-        .modal-footer {
-            display: flex;
-            gap: 12px;
-            padding: 20px 28px;
-            border-top: 1px solid var(--glass-border);
-            background: var(--dark-elevated);
-        }
-
-        .modal-footer .btn {
-            flex: 1;
-            padding: 16px 24px;
-            border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .modal-footer .btn-cancel {
-            background: var(--dark-card);
-            color: var(--gray-300);
-            border: 1px solid var(--glass-border);
-        }
-
-        .modal-footer .btn-cancel:hover {
-            border-color: var(--gray-500);
-        }
-
-        .modal-footer .btn-generate {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
-        }
-
-        .modal-footer .btn-generate:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.5);
-        }
-
-        .modal-footer .btn-generate:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        .modal-footer .btn-generate.loading {
-            position: relative;
-            color: transparent;
-        }
-
-        .modal-footer .btn-generate.loading::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border: 2px solid transparent;
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        .ai-result {
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 14px;
-            display: none;
-        }
-
-        .ai-result.show {
-            display: block;
-            animation: fadeInUp 0.4s ease;
-        }
-
-        .ai-result h4 {
-            color: var(--success);
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .ai-result-stats {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .ai-result-stat {
-            padding: 8px 14px;
-            background: rgba(16, 185, 129, 0.15);
-            border-radius: 8px;
-            font-size: 13px;
-            color: var(--success);
-            font-weight: 600;
-        }
-
-        .ai-error {
-            margin-top: 20px;
-            padding: 16px 20px;
-            background: rgba(248, 113, 113, 0.1);
-            border: 1px solid rgba(248, 113, 113, 0.3);
-            border-radius: 12px;
-            color: #fca5a5;
-            font-size: 14px;
-            display: none;
-        }
-
-        .ai-error.show {
-            display: block;
-            animation: fadeInUp 0.4s ease;
-        }
-
-        .modal-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--white);
-        }
-
-        .modal-title svg {
-            color: var(--success);
-        }
-
-        .ai-results {
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(16, 185, 129, 0.08);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: 14px;
-        }
-
-        .ai-results-section {
-            margin-bottom: 16px;
-        }
-
-        .ai-results-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .ai-results-section h4 {
-            color: var(--success);
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .ai-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .ai-tag {
-            padding: 6px 12px;
-            background: var(--dark-elevated);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            font-size: 13px;
-            color: var(--gray-300);
-        }
-
-        .modal-footer .btn-secondary {
-            background: var(--dark-card);
-            color: var(--gray-300);
-            border: 1px solid var(--glass-border);
-        }
-
-        .modal-footer .btn-secondary:hover {
-            border-color: var(--gray-500);
-        }
-
-        .modal-footer .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            box-shadow: 0 4px 20px var(--primary-glow);
-        }
-
-        .modal-footer .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px var(--primary-glow);
-        }
-
-        .modal-footer .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .modal-footer .btn-primary.loading {
-            position: relative;
-            color: transparent;
-        }
-
-        .modal-footer .btn-primary.loading svg {
-            visibility: hidden;
-        }
-
-        .modal-footer .btn-primary.loading::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border: 2px solid transparent;
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        .modal-footer .btn-success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
-        }
-
-        .modal-footer .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.5);
+            background: var(--dark-card); border: 1px solid var(--glass-border); border-radius: 24px;
+            padding: 32px; margin-bottom: 28px;
+        }
+        .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .results-header h3 { font-size: 18px; font-weight: 700; color: var(--white); }
+        .results-actions { display: flex; gap: 10px; }
+        .results-actions .btn { flex: none; padding: 10px 18px; font-size: 13px; }
+
+        .results-table { width: 100%; border-collapse: collapse; }
+        .results-table th, .results-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--glass-border); font-size: 13px; }
+        .results-table th { color: var(--gray-400); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; font-size: 11px; cursor: pointer; }
+        .results-table th:hover { color: var(--primary-light); }
+        .results-table td { color: var(--gray-300); }
+        .results-table tr:hover td { background: rgba(139, 92, 246, 0.05); }
+        .results-table-container { max-height: 400px; overflow-y: auto; border-radius: 14px; border: 1px solid var(--glass-border); }
+
+        .files-list { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+        .file-item {
+            display: flex; align-items: center; justify-content: space-between; padding: 12px 16px;
+            background: var(--dark-elevated); border-radius: 12px; border: 1px solid var(--glass-border);
+        }
+        .file-item-name { font-size: 14px; font-weight: 600; color: var(--gray-300); }
+        .file-item-meta { font-size: 12px; color: var(--gray-500); }
+        .file-item .btn { flex: none; padding: 8px 14px; font-size: 12px; }
+
+        .config-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+        .config-bar .btn { flex: none; padding: 10px 16px; font-size: 13px; }
+
+        @media (max-width: 1100px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .header { flex-wrap: wrap; }
+            .header-stats { width: 100%; justify-content: center; }
+            .header-user { margin-left: 0; padding-left: 0; border-left: none; width: 100%; justify-content: center; }
+            .filter-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <!-- Background elements -->
     <div class="bg-mesh"></div>
+    <canvas id="starfield"></canvas>
+    <div class="hyperspace-flash" id="hyperspaceFlash"></div>
+    <div class="hyperspace-vignette" id="hyperspaceVignette"></div>
     <div class="glow-orb glow-orb-1"></div>
     <div class="glow-orb glow-orb-2"></div>
     <div class="glow-orb glow-orb-3"></div>
 
-    <!-- Starfield Canvas -->
-    <canvas id="starfield"></canvas>
-    <div class="hyperspace-flash" id="hyperspace-flash"></div>
-    <div class="hyperspace-tunnel" id="hyperspace-tunnel"></div>
-    <div class="hyperspace-glow" id="hyperspace-glow"></div>
-    <div class="hyperspace-vignette" id="hyperspace-vignette"></div>
-
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="logo-wrapper">
-                <img src="/static/logo.png" alt="Logo" class="logo">
-            </div>
+            <img src="/static/logo.png" alt="Logo" class="logo">
             <div class="header-text">
-                <h1>Yellow Pages Scraper Pro</h1>
-                <p>High-performance lead generation with parallel processing</p>
+                <h1>Amazon Brand Scraper</h1>
+                <p>Product & brand research with intelligent analysis</p>
             </div>
             <div class="header-stats">
-                <div class="header-stat" data-tooltip="Active proxy connections">
-                    <div class="header-stat-value" id="proxy-count-header">0</div>
-                    <div class="header-stat-label">Proxies</div>
+                <div class="header-stat">
+                    <div class="header-stat-value" id="statProducts">0</div>
+                    <div class="header-stat-label">Products</div>
                 </div>
-                <div class="header-stat" data-tooltip="Concurrent scraping workers">
-                    <div class="header-stat-value" id="workers-header">50</div>
-                    <div class="header-stat-label">Workers</div>
+                <div class="header-stat">
+                    <div class="header-stat-value" id="statBrands">0</div>
+                    <div class="header-stat-label">Brands</div>
                 </div>
             </div>
             <div class="header-user">
                 <div class="user-info-badge">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     {{ current_user.username }}
                 </div>
                 {% if current_user.is_admin %}
                 <a href="{{ url_for('admin') }}" class="header-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>
-                    Users
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Admin
                 </a>
                 <a href="{{ url_for('settings') }}" class="header-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     Settings
                 </a>
                 {% endif %}
-                <a href="{{ url_for('logout') }}" class="header-btn header-btn-logout">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
+                <a href="{{ url_for('logout') }}" class="header-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                     Logout
                 </a>
             </div>
         </div>
 
+        <!-- Configuration Bar -->
+        <div class="config-bar">
+            <button class="btn btn-secondary" onclick="saveConfig()" style="flex:none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save Config
+            </button>
+            <button class="btn btn-secondary" onclick="showLoadConfig()" style="flex:none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Load Config
+            </button>
+            <select id="presetSelect" onchange="loadPreset(this.value)" style="flex:1; padding:10px 16px; background:var(--dark-elevated); border:2px solid var(--glass-border); border-radius:12px; color:var(--white); font-size:14px; font-family:inherit; cursor:pointer; appearance:none; background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23a78bfa%27 stroke-width=%272%27%3E%3Cpolyline points=%276 9 12 15 18 9%27%3E%3C/polyline%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 14px center; background-size:18px; padding-right:48px;">
+                <option value="">-- Select Preset --</option>
+            </select>
+        </div>
+
         <!-- Main Grid -->
         <div class="main-grid">
-            <!-- Configuration Panel -->
+            <!-- Left Panel: Search Config -->
             <div class="panel">
                 <div class="panel-header">
                     <div class="panel-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     </div>
-                    <h2>Configuration<small>Set up your scraping parameters</small></h2>
-                    <button class="btn-ai-suggest" onclick="openAiModal()" title="Get AI-powered suggestions">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                            <path d="M2 17l10 5 10-5"></path>
-                            <path d="M2 12l10 5 10-5"></path>
-                        </svg>
-                        AI Suggest
-                    </button>
+                    <h2>Search Configuration<small>Category, keywords, and search settings</small></h2>
                 </div>
 
                 <div class="form-group">
                     <label>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
-                            <line x1="7" y1="7" x2="7.01" y2="7"></line>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                        Category
+                    </label>
+                    <select id="categorySelect" multiple style="height:120px">
+                    </select>
+                    <small>Hold Ctrl/Cmd to select multiple categories</small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
                         Keywords
                     </label>
-                    <textarea id="keywords" placeholder="building supply, shutters, millwork, lumber, architects"></textarea>
-                    <small>Enter business categories or search terms (comma-separated)</small>
+                    <textarea id="keywords" placeholder="Enter keywords, one per line&#10;ashwagandha supplement&#10;turmeric curcumin&#10;magnesium glycinate"></textarea>
+                    <small>One keyword per line or comma-separated</small>
                 </div>
 
                 <div class="form-group">
                     <label>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        Locations
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        Max Pages Per Search
                     </label>
-                    <textarea id="locations" placeholder="Miami FL, Chicago IL, New York NY, Los Angeles CA"></textarea>
-                    <small>Enter cities to search in (comma-separated)</small>
+                    <input type="number" id="maxPages" value="3" min="1" max="20">
                 </div>
 
                 <div class="form-group">
                     <label>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                        </svg>
-                        Max Pages per Search
-                    </label>
-                    <input type="number" id="max_pages" value="10" min="1" max="100">
-                    <small>Each page contains approximately 30 businesses</small>
-                </div>
-
-                <div class="form-group">
-                    <label>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                        Max Businesses (Limit)
-                    </label>
-                    <input type="number" id="max_businesses" value="0" min="0" max="1000000" placeholder="0 = unlimited">
-                    <small>Stop scraping after reaching this number (0 = no limit)</small>
-                </div>
-
-                <div class="form-group">
-                    <label>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         Concurrent Workers
                     </label>
-                    <select id="concurrent">
-                        <option value="10">10 Workers</option>
-                        <option value="25">25 Workers</option>
-                        <option value="50" selected>50 Workers (Recommended)</option>
-                        <option value="75">75 Workers</option>
-                        <option value="100">100 Workers</option>
-                        <option value="125">125 Workers</option>
-                        <option value="150">150 Workers (Maximum)</option>
-                    </select>
-                    <small>More workers = faster scraping (requires proxies)</small>
+                    <input type="number" id="concurrent" value="3" min="1" max="10">
+                    <small>Lower = safer, higher = faster (max 10)</small>
                 </div>
 
                 <div class="form-group">
                     <label class="checkbox-group">
-                        <input type="checkbox" id="use_proxies" checked>
-                        <span>Use Proxy Rotation</span>
-                        <small>Recommended</small>
+                        <input type="checkbox" id="detailPages">
+                        <span>Scrape Detail Pages (Brand, BSR, Seller)</span>
                     </label>
+                    <small>Visits each product page for extra data. Slower and higher CAPTCHA risk. Use with proxies.</small>
                 </div>
 
                 <div class="form-group">
                     <label class="checkbox-group">
-                        <input type="checkbox" id="chunk_output">
-                        <span>Split Output (50K rows per file)</span>
-                        <small>Large datasets</small>
+                        <input type="checkbox" id="useProxies" checked>
+                        <span>Use Proxies</span>
                     </label>
                 </div>
 
-                <div class="btn-group">
-                    <button class="btn btn-primary" id="start-btn" onclick="startScrape()">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                        </svg>
-                        Start Scraping
-                    </button>
-                    <button class="btn btn-danger" id="stop-btn" onclick="stopScrape()" disabled>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="6" y="6" width="12" height="12" rx="2"></rect>
-                        </svg>
-                        Stop
-                    </button>
+                <div class="form-group">
+                    <label>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Output Format
+                    </label>
+                    <div class="radio-group">
+                        <label class="radio-option" onclick="setOutputFormat('csv')"><input type="radio" name="outputFormat" value="csv">CSV</label>
+                        <label class="radio-option" onclick="setOutputFormat('json')"><input type="radio" name="outputFormat" value="json">JSON</label>
+                        <label class="radio-option active" onclick="setOutputFormat('both')"><input type="radio" name="outputFormat" value="both" checked>Both</label>
+                    </div>
                 </div>
             </div>
 
-            <!-- Proxy Panel -->
+            <!-- Right Panel: Filters -->
             <div class="panel">
                 <div class="panel-header">
                     <div class="panel-icon panel-icon-secondary">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
-                            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-                            <line x1="6" y1="6" x2="6.01" y2="6"></line>
-                            <line x1="6" y1="18" x2="6.01" y2="18"></line>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                     </div>
-                    <h2>Proxy Management<small>Configure proxy rotation settings</small></h2>
+                    <h2>Filters & Criteria<small>Narrow results by product attributes</small></h2>
                 </div>
 
-                <div class="form-group">
-                    <label>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        Upload Proxy File
-                    </label>
-                    <div class="file-upload">
-                        <input type="file" id="proxy-file" accept=".txt" onchange="uploadProxies()">
-                        <label for="proxy-file" class="file-upload-label">
-                            <div class="upload-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                            </div>
-                            <span>Click or drag to upload proxies.txt</span>
-                            <small>Format: host:port:username:password (one per line)</small>
-                        </label>
+                <!-- Review Count -->
+                <div class="collapsible-header open" onclick="toggleCollapsible(this)">
+                    <span style="font-size:14px; font-weight:600; color:var(--gray-300)">Review & BSR Filters</span>
+                    <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="collapsible-body open">
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label>Min Reviews</label>
+                            <input type="number" id="filterMinReviews" value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Max Reviews</label>
+                            <input type="number" id="filterMaxReviews" value="0" min="0">
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label>Min BSR</label>
+                            <input type="number" id="filterMinBsr" value="0" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Max BSR</label>
+                            <input type="number" id="filterMaxBsr" value="0" min="0">
+                        </div>
                     </div>
                 </div>
 
-                <div id="proxy-status">
-                    <!-- Proxy status will be loaded here -->
+                <!-- Price & Rating -->
+                <div class="collapsible-header" onclick="toggleCollapsible(this)" style="margin-top:12px">
+                    <span style="font-size:14px; font-weight:600; color:var(--gray-300)">Price & Rating Filters</span>
+                    <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="collapsible-body">
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label>Min Price ($)</label>
+                            <input type="number" id="filterMinPrice" value="0" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Max Price ($)</label>
+                            <input type="number" id="filterMaxPrice" value="0" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label>Min Rating (0-5)</label>
+                            <input type="number" id="filterMinRating" value="0" min="0" max="5" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-group" style="margin-top:22px">
+                                <input type="checkbox" id="filterFbaOnly">
+                                <span>FBA Only</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Types -->
+                <div class="collapsible-header" onclick="toggleCollapsible(this)" style="margin-top:12px">
+                    <span style="font-size:14px; font-weight:600; color:var(--gray-300)">Product Types & Exclusions</span>
+                    <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="collapsible-body">
+                    <div class="form-group">
+                        <label>Product Types (comma-separated)</label>
+                        <input type="text" id="filterProductTypes" placeholder="e.g. capsule, tablet, powder, gummy">
+                        <small>Leave empty to include all types</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Excluded Brands (comma-separated)</label>
+                        <textarea id="filterExcludedBrands" style="min-height:60px" placeholder="e.g. Nature Made, Nature's Bounty, NOW Foods"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Title Keywords (comma-separated)</label>
+                        <input type="text" id="filterTitleKeywords" placeholder="Products must contain these words">
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnStart" onclick="startScrape()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Start Scrape
+                    </button>
+                    <button class="btn btn-danger" id="btnStop" onclick="stopScrape()" disabled>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12"/></svg>
+                        Stop
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Progress Panel -->
-        <div class="progress-panel" id="progress-panel" style="display: none;">
+        <div class="progress-panel" id="progressPanel" style="display:none">
             <div class="progress-header">
-                <div class="running-indicator"></div>
-                <h2>Scraping in Progress</h2>
+                <h3 style="font-size:18px; font-weight:700; color:var(--white)">Scraping Progress</h3>
+                <span class="phase-badge" id="phaseBadge">Initializing</span>
             </div>
-
-            <div class="progress-bar-container">
-                <div class="progress-bar-fill" id="progress-bar"></div>
-            </div>
-
             <div class="progress-stats">
-                <div class="stat">
-                    <div class="stat-value" id="stat-completed">0</div>
-                    <div class="stat-label">Completed</div>
+                <div class="progress-stat">
+                    <div class="progress-stat-value" id="progressSearches">0/0</div>
+                    <div class="progress-stat-label">Searches</div>
                 </div>
-                <div class="stat">
-                    <div class="stat-value" id="stat-total">0</div>
-                    <div class="stat-label">Total Searches</div>
+                <div class="progress-stat">
+                    <div class="progress-stat-value" id="progressProducts">0</div>
+                    <div class="progress-stat-label">Products</div>
                 </div>
-                <div class="stat">
-                    <div class="stat-value" id="stat-businesses">0</div>
-                    <div class="stat-label">Businesses Found</div>
+                <div class="progress-stat">
+                    <div class="progress-stat-value" id="progressBrands">0</div>
+                    <div class="progress-stat-label">Brands</div>
                 </div>
-                <div class="stat">
-                    <div class="stat-value" id="stat-rate">0</div>
-                    <div class="stat-label">Per Minute</div>
+                <div class="progress-stat">
+                    <div class="progress-stat-value" id="progressCaptchas">0</div>
+                    <div class="progress-stat-label">CAPTCHAs</div>
                 </div>
             </div>
-
-            <div class="download-section" id="download-section" style="display: none;">
-                <button class="btn-download" onclick="downloadResults()">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Download Results
-                </button>
-                <button class="btn-download" onclick="downloadAllResults()" id="download-all-btn" style="display: none;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Download All (ZIP)
-                </button>
+            <div class="progress-bar-container" style="margin-top:20px">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-info">
+                <span id="progressPercent">0%</span>
+                <span id="progressPhaseText">Starting...</span>
             </div>
         </div>
 
-        <!-- Previous Results -->
-        <div class="results-panel" id="results-panel" style="display: none;">
-            <div class="results-panel-header">
-                <div class="panel-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                    </svg>
-                </div>
-                <h2>Previous Results</h2>
-            </div>
-            <div id="results-list"></div>
+        <!-- Log Panel -->
+        <div class="log-panel">
+            <h3>Live Log</h3>
+            <div class="log-container" id="logContainer"></div>
         </div>
 
-        <!-- Logs Panel -->
-        <div class="logs-panel">
-            <div class="logs-panel-header">
-                <div class="panel-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="4 17 10 11 4 5"></polyline>
-                        <line x1="12" y1="19" x2="20" y2="19"></line>
-                    </svg>
-                </div>
-                <h2>Live Activity Log</h2>
-            </div>
-            <div class="logs" id="logs">
-                <div class="log-entry log-info">
-                    <span class="log-timestamp">--:--:--</span> System initialized. Ready to start scraping...
-                </div>
-            </div>
-        </div>
-
-        <!-- AI Suggestion Modal -->
-        <div class="modal-overlay" id="ai-modal">
-            <div class="modal">
-                <div class="modal-header">
-                    <div class="modal-title">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                            <path d="M2 17l10 5 10-5"></path>
-                            <path d="M2 12l10 5 10-5"></path>
-                        </svg>
-                        AI Keyword & Location Suggestions
-                    </div>
-                    <button class="modal-close" onclick="closeAiModal()">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
+        <!-- Results Panel -->
+        <div class="results-panel" id="resultsPanel" style="display:none">
+            <div class="results-header">
+                <h3>Brand Results</h3>
+                <div class="results-actions">
+                    <button class="btn btn-primary" onclick="downloadAll()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download All
                     </button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            Ideal Customer Profile (ICP)
-                        </label>
-                        <textarea id="icp-input" placeholder="Describe your ideal customer in detail...&#10;&#10;Example: Small to medium-sized restaurants and cafes in urban areas that need regular plumbing maintenance, HVAC services, or kitchen equipment repairs. They typically have 10-50 employees and are looking for reliable local service providers."></textarea>
-                        <small>Be specific about the type of businesses, their size, location preferences, and what services they might need. The more detail you provide, the better the AI suggestions will be.</small>
-                    </div>
-                    <div id="ai-error" class="ai-error" style="display: none;"></div>
-                    <div id="ai-results" class="ai-results" style="display: none;">
-                        <div class="ai-results-section">
-                            <h4>Suggested Keywords</h4>
-                            <div id="ai-keywords" class="ai-tags"></div>
-                        </div>
-                        <div class="ai-results-section">
-                            <h4>Suggested Locations</h4>
-                            <div id="ai-locations" class="ai-tags"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeAiModal()">Cancel</button>
-                    <button class="btn btn-primary" id="ai-generate-btn" onclick="generateAiSuggestions()">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                        </svg>
-                        Generate Suggestions
-                    </button>
-                    <button class="btn btn-success" id="ai-apply-btn" onclick="applyAiSuggestions()" style="display: none;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Apply to Form
+                    <button class="btn btn-secondary" onclick="previewResults()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Preview
                     </button>
                 </div>
             </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-            Yellow Pages Scraper Pro &copy; 2024 &bull; Built with modern web technologies
+            <div class="results-table-container" id="resultsTableContainer" style="display:none">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th onclick="sortResults('brand')">Brand</th>
+                            <th onclick="sortResults('total_products')">Products</th>
+                            <th onclick="sortResults('total_reviews')">Reviews</th>
+                            <th onclick="sortResults('avg_rating')">Avg Rating</th>
+                            <th onclick="sortResults('price_avg')">Avg Price</th>
+                            <th onclick="sortResults('avg_bsr')">Avg BSR</th>
+                            <th onclick="sortResults('estimated_monthly_revenue')">Est. Monthly Rev</th>
+                            <th onclick="sortResults('fba_percentage')">FBA %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+            <div class="files-list" id="filesList"></div>
         </div>
     </div>
 
     <script>
-        // ============================================
-        // HYPERSPACE STARFIELD ANIMATION SYSTEM
-        // Inspired by Star Wars & Star Trek lightspeed effects
-        // ============================================
-
-        const Starfield = {
-            // Animation states
-            STATES: {
-                IDLE: 'idle',           // Static twinkling stars
-                JUMPING: 'jumping',     // Initial acceleration burst
-                HYPERSPACE: 'hyperspace', // Full speed star streaks
-                DROPPING: 'dropping'    // Deceleration back to normal
-            },
-
-            // Current state
-            state: 'idle',
-            canvas: null,
-            ctx: null,
-            stars: [],
-            centerX: 0,
-            centerY: 0,
-
-            // Animation parameters
-            config: {
-                starCount: 600,           // Number of stars for idle (visible across screen)
-                hyperspaceStarCount: 400, // Extra stars added during hyperspace
-                baseSpeed: 0.003,         // Very slow idle drift (almost static)
-                hyperspaceSpeed: 40,      // Maximum hyperspace speed
-                jumpDuration: 1500,       // Time to reach hyperspace (ms)
-                dropDuration: 2000,       // Time to return to idle (ms)
-                maxStreakLength: 500,     // Maximum star streak length
-                starColors: [
-                    '#ffffff',            // Pure white (most common)
-                    '#ffffff',            // Pure white
-                    '#ffffff',            // Pure white
-                    '#f0f4ff',            // Slight blue-white
-                    '#fff8f0',            // Slight warm white
-                    '#ffe4c4',            // Warm star
-                    '#e8f0ff',            // Cool white
-                    '#a78bfa',            // Purple accent (rare)
-                    '#87ceeb',            // Light blue
-                ]
-            },
-
-            // Timing
-            lastTime: 0,
-            transitionStart: 0,
-            animationFrame: null,
-
-            // Initialize the starfield
-            init() {
-                this.canvas = document.getElementById('starfield');
-                if (!this.canvas) return;
-
-                this.ctx = this.canvas.getContext('2d');
-                this.resize();
-                this.createStars();
-                this.animate(0);
-
-                // Handle window resize
-                window.addEventListener('resize', () => this.resize());
-            },
-
-            // Resize canvas to window
-            resize() {
-                this.canvas.width = window.innerWidth;
-                this.canvas.height = window.innerHeight;
-                this.centerX = this.canvas.width / 2;
-                this.centerY = this.canvas.height / 2;
-            },
-
-            // Create initial star field
-            createStars() {
-                this.stars = [];
-                for (let i = 0; i < this.config.starCount; i++) {
-                    this.stars.push(this.createStar(true));
-                }
-            },
-
-            // Create a single star
-            createStar(forIdle = true) {
-                // For idle mode: position randomly across entire screen
-                // For hyperspace: position using polar coords from center
-                const angle = Math.random() * Math.PI * 2;
-                const distance = Math.random() * Math.max(this.canvas.width, this.canvas.height) * 0.8;
-
-                // Random size with more small stars than large
-                const sizeRand = Math.random();
-                let size;
-                if (sizeRand < 0.6) size = 0.5 + Math.random() * 0.5;      // 60% tiny
-                else if (sizeRand < 0.85) size = 1 + Math.random() * 0.8;  // 25% small
-                else if (sizeRand < 0.97) size = 1.8 + Math.random() * 1;  // 12% medium
-                else size = 2.8 + Math.random() * 1.5;                      // 3% large/bright
-
-                return {
-                    // Position for hyperspace (polar from center)
-                    x: Math.cos(angle) * distance,
-                    y: Math.sin(angle) * distance,
-                    // Screen position for idle mode (random across screen)
-                    idleX: Math.random() * (this.canvas.width || window.innerWidth),
-                    idleY: Math.random() * (this.canvas.height || window.innerHeight),
-                    // Slight idle drift direction
-                    driftX: (Math.random() - 0.5) * 0.1,
-                    driftY: (Math.random() - 0.5) * 0.1,
-                    // Z depth for hyperspace (must be > 0 to avoid division by zero)
-                    z: forIdle ? (50 + Math.random() * 200) : (1 + Math.random() * 50),
-                    // Previous position for streak calculation
-                    prevX: 0,
-                    prevY: 0,
-                    // Visual properties
-                    baseSize: size,
-                    color: this.config.starColors[Math.floor(Math.random() * this.config.starColors.length)],
-                    // Twinkle phase
-                    twinkleOffset: Math.random() * Math.PI * 2,
-                    twinkleSpeed: 0.5 + Math.random() * 1.5,
-                    // Brightness variation
-                    brightness: 0.4 + Math.random() * 0.6,
-                };
-            },
-
-            // Reset a star that has gone off screen (spawn at center for outward travel)
-            resetStar(star) {
-                const angle = Math.random() * Math.PI * 2;
-                const distance = 20 + Math.random() * 100; // Distance from center in 3D space
-
-                star.x = Math.cos(angle) * distance;
-                star.y = Math.sin(angle) * distance;
-                star.z = 280 + Math.random() * 70; // Start with LARGE z (appears at center)
-                star.prevX = star.x;
-                star.prevY = star.y;
-            },
-
-            // Trigger jump to hyperspace
-            jumpToHyperspace() {
-                if (this.state === this.STATES.HYPERSPACE || this.state === this.STATES.JUMPING) return;
-
-                // Prepare stars for hyperspace transition
-                this.prepareStarsForHyperspace();
-
-                this.state = this.STATES.JUMPING;
-                this.transitionStart = performance.now();
-
-                // Add screen shake for dramatic effect
-                const container = document.querySelector('.container');
-                if (container) {
-                    container.classList.add('screen-shake');
-                    setTimeout(() => container.classList.remove('screen-shake'), 600);
-                }
-
-                // Trigger flash effect
-                const flash = document.getElementById('hyperspace-flash');
-                if (flash) {
-                    flash.classList.remove('active');
-                    void flash.offsetWidth; // Force reflow
-                    flash.classList.add('active');
-                }
-
-                // Enable vignette
-                const vignette = document.getElementById('hyperspace-vignette');
-                if (vignette) {
-                    vignette.classList.add('active');
-                }
-
-                // Enable tunnel effect with slight delay
-                setTimeout(() => {
-                    const tunnel = document.getElementById('hyperspace-tunnel');
-                    if (tunnel) tunnel.classList.add('active');
-                }, 300);
-
-                // Enable glow effect
-                setTimeout(() => {
-                    const glow = document.getElementById('hyperspace-glow');
-                    if (glow) glow.classList.add('active');
-                }, 500);
-
-                // Spawn extra stars for denser hyperspace field
-                setTimeout(() => {
-                    this.spawnHyperspaceStars();
-                }, 800);
-
-                // Transition to full hyperspace after jump animation
-                setTimeout(() => {
-                    if (this.state === this.STATES.JUMPING) {
-                        this.state = this.STATES.HYPERSPACE;
-                    }
-                }, this.config.jumpDuration);
-            },
-
-            // Drop out of hyperspace
-            dropFromHyperspace() {
-                if (this.state === this.STATES.IDLE || this.state === this.STATES.DROPPING) return;
-
-                this.state = this.STATES.DROPPING;
-                this.transitionStart = performance.now();
-
-                // Cull extra stars gradually
-                this.cullExtraStars();
-
-                // Disable glow first
-                const glow = document.getElementById('hyperspace-glow');
-                if (glow) glow.classList.remove('active');
-
-                // Disable tunnel
-                setTimeout(() => {
-                    const tunnel = document.getElementById('hyperspace-tunnel');
-                    if (tunnel) tunnel.classList.remove('active');
-                }, this.config.dropDuration * 0.3);
-
-                // Disable vignette with delay
-                setTimeout(() => {
-                    const vignette = document.getElementById('hyperspace-vignette');
-                    if (vignette) {
-                        vignette.classList.remove('active');
-                    }
-                }, this.config.dropDuration * 0.7);
-
-                // Transition to idle after drop animation
-                setTimeout(() => {
-                    if (this.state === this.STATES.DROPPING) {
-                        this.state = this.STATES.IDLE;
-                    }
-                }, this.config.dropDuration);
-            },
-
-            // Calculate current speed based on state
-            getCurrentSpeed(timestamp) {
-                const elapsed = timestamp - this.transitionStart;
-
-                switch (this.state) {
-                    case this.STATES.IDLE:
-                        return this.config.baseSpeed;
-
-                    case this.STATES.JUMPING: {
-                        // Exponential acceleration curve (like real hyperspace jump)
-                        const progress = Math.min(elapsed / this.config.jumpDuration, 1);
-                        // Use exponential ease-in for dramatic acceleration
-                        const easeProgress = progress < 0.5
-                            ? Math.pow(2, 20 * progress - 10) / 2
-                            : (2 - Math.pow(2, -20 * progress + 10)) / 2;
-                        return this.config.baseSpeed + (this.config.hyperspaceSpeed - this.config.baseSpeed) * easeProgress;
-                    }
-
-                    case this.STATES.HYPERSPACE:
-                        // Full speed with slight oscillation for visual interest
-                        return this.config.hyperspaceSpeed * (0.9 + Math.sin(timestamp * 0.005) * 0.1);
-
-                    case this.STATES.DROPPING: {
-                        // Deceleration curve
-                        const progress = Math.min(elapsed / this.config.dropDuration, 1);
-                        // Ease-out deceleration
-                        const easeProgress = 1 - Math.pow(1 - progress, 3);
-                        return this.config.hyperspaceSpeed - (this.config.hyperspaceSpeed - this.config.baseSpeed) * easeProgress;
-                    }
-
-                    default:
-                        return this.config.baseSpeed;
-                }
-            },
-
-            // Main animation loop
-            animate(timestamp) {
-                const deltaTime = timestamp - this.lastTime;
-                this.lastTime = timestamp;
-
-                const isHyperspace = this.state === this.STATES.HYPERSPACE ||
-                                     this.state === this.STATES.JUMPING ||
-                                     this.state === this.STATES.DROPPING;
-
-                // Clear canvas - full clear for idle, trail effect for hyperspace
-                if (isHyperspace) {
-                    this.ctx.fillStyle = 'rgba(10, 10, 15, 0.12)';
-                } else {
-                    this.ctx.fillStyle = 'rgba(10, 10, 15, 1)'; // Full clear for crisp static stars
-                }
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-                const speed = this.getCurrentSpeed(timestamp);
-
-                if (this.state === this.STATES.IDLE) {
-                    // ==========================================
-                    // IDLE MODE: Static twinkling stars
-                    // ==========================================
-                    this.drawIdleStars(timestamp);
-                } else {
-                    // ==========================================
-                    // HYPERSPACE MODE: Zooming star streaks
-                    // ==========================================
-                    this.drawHyperspaceStars(timestamp, speed);
-
-                    // Add radial effect during hyperspace
-                    this.drawRadialEffect(speed);
-                }
-
-                this.animationFrame = requestAnimationFrame((t) => this.animate(t));
-            },
-
-            // Draw static stars for idle mode (like floating in space)
-            drawIdleStars(timestamp) {
-                for (let star of this.stars) {
-                    // Very subtle drift movement
-                    star.idleX += star.driftX;
-                    star.idleY += star.driftY;
-
-                    // Wrap around screen edges
-                    if (star.idleX < -10) star.idleX = this.canvas.width + 10;
-                    if (star.idleX > this.canvas.width + 10) star.idleX = -10;
-                    if (star.idleY < -10) star.idleY = this.canvas.height + 10;
-                    if (star.idleY > this.canvas.height + 10) star.idleY = -10;
-
-                    // Twinkle effect
-                    const twinkle = 0.5 + Math.sin(timestamp * 0.002 * star.twinkleSpeed + star.twinkleOffset) * 0.5;
-                    const alpha = star.brightness * twinkle;
-
-                    // Draw the star
-                    this.ctx.beginPath();
-                    this.ctx.fillStyle = star.color;
-                    this.ctx.globalAlpha = alpha;
-
-                    const size = star.baseSize;
-
-                    // Draw star point
-                    this.ctx.arc(star.idleX, star.idleY, size, 0, Math.PI * 2);
-                    this.ctx.fill();
-
-                    // Add glow for larger/brighter stars
-                    if (size > 1.8 && alpha > 0.5) {
-                        this.ctx.beginPath();
-                        this.ctx.globalAlpha = alpha * 0.2;
-                        this.ctx.arc(star.idleX, star.idleY, size * 3, 0, Math.PI * 2);
-                        this.ctx.fill();
-
-                        // Add subtle cross flare for very bright stars
-                        if (size > 2.5) {
-                            this.ctx.globalAlpha = alpha * 0.15;
-                            this.ctx.strokeStyle = star.color;
-                            this.ctx.lineWidth = 1;
-
-                            // Horizontal flare
-                            this.ctx.beginPath();
-                            this.ctx.moveTo(star.idleX - size * 4, star.idleY);
-                            this.ctx.lineTo(star.idleX + size * 4, star.idleY);
-                            this.ctx.stroke();
-
-                            // Vertical flare
-                            this.ctx.beginPath();
-                            this.ctx.moveTo(star.idleX, star.idleY - size * 4);
-                            this.ctx.lineTo(star.idleX, star.idleY + size * 4);
-                            this.ctx.stroke();
-                        }
-                    }
-
-                    this.ctx.globalAlpha = 1;
-                }
-            },
-
-            // Draw zooming stars for hyperspace mode (stars fly OUTWARD from center)
-            drawHyperspaceStars(timestamp, speed) {
-                for (let star of this.stars) {
-                    // Store previous z for streak calculation
-                    const prevZ = star.z;
-
-                    // Move star AWAY from viewer (decrease z = star flies toward us and past)
-                    star.z -= speed * 0.025;
-
-                    // Project 3D position to 2D screen (smaller z = further from center on screen)
-                    const factor = 300 / Math.max(0.5, star.z);
-                    const screenX = this.centerX + star.x * factor;
-                    const screenY = this.centerY + star.y * factor;
-
-                    // Previous position projection (larger z = closer to center)
-                    const prevFactor = 300 / Math.max(0.5, prevZ);
-                    const prevScreenX = this.centerX + star.x * prevFactor;
-                    const prevScreenY = this.centerY + star.y * prevFactor;
-
-                    // Check if star has flown past (z too small) or off screen
-                    if (star.z < 1 ||
-                        screenX < -200 || screenX > this.canvas.width + 200 ||
-                        screenY < -200 || screenY > this.canvas.height + 200) {
-                        this.resetStar(star);
-                        continue;
-                    }
-
-                    // Calculate star size based on z (closer = bigger, i.e., smaller z = bigger)
-                    const size = star.baseSize * (150 / Math.max(10, star.z));
-
-                    // Calculate streak length based on speed and position change
-                    const dx = screenX - prevScreenX;
-                    const dy = screenY - prevScreenY;
-                    const streakLength = Math.min(
-                        Math.sqrt(dx * dx + dy * dy),
-                        this.config.maxStreakLength * (speed / this.config.hyperspaceSpeed)
-                    );
-
-                    if (streakLength > 2) {
-                        // Create gradient for streak (tail at center, head at outer position)
-                        const gradient = this.ctx.createLinearGradient(prevScreenX, prevScreenY, screenX, screenY);
-
-                        // Color shift toward blue at high speeds
-                        let streakColor = star.color;
-                        if (speed > this.config.hyperspaceSpeed * 0.3) {
-                            const blueShift = (speed - this.config.hyperspaceSpeed * 0.3) / (this.config.hyperspaceSpeed * 0.7);
-                            streakColor = this.shiftColorToBlue(star.color, blueShift * 0.4);
-                        }
-
-                        // Gradient: transparent tail near center, bright head at outer edge
-                        gradient.addColorStop(0, 'transparent');
-                        gradient.addColorStop(0.3, streakColor + '30');
-                        gradient.addColorStop(0.7, streakColor + 'a0');
-                        gradient.addColorStop(1, streakColor);
-
-                        this.ctx.beginPath();
-                        this.ctx.strokeStyle = gradient;
-                        this.ctx.lineWidth = Math.max(1, size * 0.6);
-                        this.ctx.lineCap = 'round';
-                        this.ctx.moveTo(prevScreenX, prevScreenY);
-                        this.ctx.lineTo(screenX, screenY);
-                        this.ctx.stroke();
-
-                        // Bright head of streak (at the outer position)
-                        this.ctx.beginPath();
-                        this.ctx.fillStyle = '#ffffff';
-                        this.ctx.globalAlpha = Math.min(0.95, 0.5 + (150 - star.z) / 200);
-                        this.ctx.arc(screenX, screenY, Math.max(1.2, size * 0.4), 0, Math.PI * 2);
-                        this.ctx.fill();
-                        this.ctx.globalAlpha = 1;
-                    } else {
-                        // Small dot for slow-moving or distant stars (near center)
-                        this.ctx.beginPath();
-                        this.ctx.fillStyle = star.color;
-                        this.ctx.globalAlpha = 0.6;
-                        this.ctx.arc(screenX, screenY, Math.max(0.5, size * 0.4), 0, Math.PI * 2);
-                        this.ctx.fill();
-                        this.ctx.globalAlpha = 1;
-                    }
-                }
-            },
-
-            // Draw radial lines effect during hyperspace
-            drawRadialEffect(speed) {
-                const intensity = Math.min(1, (speed - this.config.baseSpeed) / (this.config.hyperspaceSpeed - this.config.baseSpeed));
-                if (intensity < 0.2) return;
-
-                // Draw central vortex glow
-                const gradient = this.ctx.createRadialGradient(
-                    this.centerX, this.centerY, 0,
-                    this.centerX, this.centerY, 150 * intensity
-                );
-                gradient.addColorStop(0, `rgba(139, 92, 246, ${intensity * 0.15})`);
-                gradient.addColorStop(0.5, `rgba(96, 165, 250, ${intensity * 0.08})`);
-                gradient.addColorStop(1, 'transparent');
-
-                this.ctx.fillStyle = gradient;
-                this.ctx.beginPath();
-                this.ctx.arc(this.centerX, this.centerY, 200, 0, Math.PI * 2);
-                this.ctx.fill();
-
-                // Draw radial speed lines
-                const numLines = 24;
-                this.ctx.lineWidth = 1;
-
-                for (let i = 0; i < numLines; i++) {
-                    const angle = (i / numLines) * Math.PI * 2;
-                    const innerRadius = 80 + Math.sin(performance.now() * 0.003 + i) * 20;
-                    const outerRadius = Math.max(this.canvas.width, this.canvas.height) * 0.8;
-
-                    const lineGradient = this.ctx.createLinearGradient(
-                        this.centerX + Math.cos(angle) * innerRadius,
-                        this.centerY + Math.sin(angle) * innerRadius,
-                        this.centerX + Math.cos(angle) * outerRadius,
-                        this.centerY + Math.sin(angle) * outerRadius
-                    );
-                    lineGradient.addColorStop(0, `rgba(139, 92, 246, ${intensity * 0.1})`);
-                    lineGradient.addColorStop(0.3, `rgba(96, 165, 250, ${intensity * 0.05})`);
-                    lineGradient.addColorStop(1, 'transparent');
-
-                    this.ctx.strokeStyle = lineGradient;
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(
-                        this.centerX + Math.cos(angle) * innerRadius,
-                        this.centerY + Math.sin(angle) * innerRadius
-                    );
-                    this.ctx.lineTo(
-                        this.centerX + Math.cos(angle) * outerRadius,
-                        this.centerY + Math.sin(angle) * outerRadius
-                    );
-                    this.ctx.stroke();
-                }
-
-                // Add pulsing center point
-                const pulseSize = 3 + Math.sin(performance.now() * 0.01) * 2;
-                this.ctx.fillStyle = `rgba(255, 255, 255, ${intensity * 0.3})`;
-                this.ctx.beginPath();
-                this.ctx.arc(this.centerX, this.centerY, pulseSize, 0, Math.PI * 2);
-                this.ctx.fill();
-            },
-
-            // Shift color toward blue for hyperspace effect
-            shiftColorToBlue(color, amount) {
-                // Parse hex color and shift toward blue
-                const colorMap = {
-                    '#ffffff': [255, 255, 255],
-                    '#f0f4ff': [240, 244, 255],
-                    '#fff8f0': [255, 248, 240],
-                    '#ffe4c4': [255, 228, 196],
-                    '#e8f0ff': [232, 240, 255],
-                    '#a78bfa': [167, 139, 250],
-                    '#87ceeb': [135, 206, 235],
-                    '#22d3ee': [34, 211, 238]
-                };
-
-                const rgb = colorMap[color] || [255, 255, 255];
-                // Shift toward blue/cyan
-                const targetR = Math.round(rgb[0] * (1 - amount) + 150 * amount);
-                const targetG = Math.round(rgb[1] * (1 - amount) + 200 * amount);
-                const targetB = Math.round(rgb[2] * (1 - amount * 0.3) + 255 * amount * 0.3);
-
-                // Return as hex for compatibility with gradient color stops
-                const toHex = (n) => Math.min(255, Math.max(0, n)).toString(16).padStart(2, '0');
-                return `#${toHex(targetR)}${toHex(targetG)}${toHex(targetB)}`;
-            },
-
-            // Prepare existing stars for hyperspace transition (spawn at center, will streak outward)
-            prepareStarsForHyperspace() {
-                for (let star of this.stars) {
-                    // Random angle for outward direction
-                    const angle = Math.random() * Math.PI * 2;
-                    const distance = 20 + Math.random() * 150;
-
-                    star.x = Math.cos(angle) * distance;
-                    star.y = Math.sin(angle) * distance;
-                    star.z = 150 + Math.random() * 200; // Large z = appears at center
-                    star.prevX = star.x;
-                    star.prevY = star.y;
-                }
-            },
-
-            // Add extra stars during hyperspace for denser field
-            spawnHyperspaceStars() {
-                const extraStars = this.config.hyperspaceStarCount;
-                for (let i = 0; i < extraStars; i++) {
-                    const star = this.createStar(false);
-                    star.z = 200 + Math.random() * 150; // Large z = spawn at center
-                    this.stars.push(star);
-                }
-            },
-
-            // Remove extra stars when dropping and reset for idle
-            cullExtraStars() {
-                // Keep only original star count
-                if (this.stars.length > this.config.starCount) {
-                    this.stars.length = this.config.starCount;
-                }
-                // Reset star positions for idle mode
-                for (let star of this.stars) {
-                    star.idleX = Math.random() * this.canvas.width;
-                    star.idleY = Math.random() * this.canvas.height;
-                }
+        // ============================================================
+        // State
+        // ============================================================
+        let isRunning = false;
+        let logEventSource = null;
+        let progressInterval = null;
+        let outputFormat = 'both';
+        let previewData = [];
+        let sortField = 'estimated_monthly_revenue';
+        let sortAsc = false;
+        let categories = {};
+
+        // ============================================================
+        // Init
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadCategories();
+            await loadPresets();
+            startLogStream();
+            startProgressPolling();
+            loadResultFiles();
+
+            // Auto-load Ally Nutra preset
+            const presetSelect = document.getElementById('presetSelect');
+            if (presetSelect.querySelector('option[value="ally_nutra"]')) {
+                presetSelect.value = 'ally_nutra';
+                loadPreset('ally_nutra');
             }
-        };
-
-        // Initialize starfield when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            Starfield.init();
         });
 
-        // ============================================
-        // END STARFIELD SYSTEM
-        // ============================================
+        // ============================================================
+        // Categories & Presets
+        // ============================================================
+        async function loadCategories() {
+            try {
+                const resp = await fetch('/api/categories');
+                categories = await resp.json();
+                const select = document.getElementById('categorySelect');
+                select.innerHTML = '';
+                for (const [key, cat] of Object.entries(categories)) {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = cat.name;
+                    select.appendChild(opt);
+                }
+            } catch (e) { console.error('Failed to load categories:', e); }
+        }
 
-        let eventSource = null;
-        let startTime = null;
-        let scrapeStartedAt = null;  // Track when scrape started to prevent false completion detection
-        const SCRAPE_GRACE_PERIOD = 10000;  // 10 seconds grace period before checking running status
+        async function loadPresets() {
+            try {
+                const resp = await fetch('/api/presets');
+                const presets = await resp.json();
+                const select = document.getElementById('presetSelect');
+                for (const [key, preset] of Object.entries(presets)) {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = preset.name + ' - ' + preset.description;
+                    select.appendChild(opt);
+                }
+            } catch (e) { console.error('Failed to load presets:', e); }
+        }
 
-        // Connect to log stream
-        function connectLogStream() {
-            eventSource = new EventSource('/api/logs');
+        async function loadPreset(name) {
+            if (!name) return;
+            try {
+                const resp = await fetch(`/api/preset/${name}`);
+                const preset = await resp.json();
 
-            eventSource.onmessage = function(event) {
-                const data = JSON.parse(event.data);
+                // Set categories
+                const catSelect = document.getElementById('categorySelect');
+                Array.from(catSelect.options).forEach(opt => {
+                    opt.selected = preset.categories.includes(opt.value);
+                });
 
-                if (data.heartbeat) return;
+                // Set keywords
+                document.getElementById('keywords').value = (preset.keywords || []).join('\n');
 
-                const logsDiv = document.getElementById('logs');
-                const entry = document.createElement('div');
-                entry.className = `log-entry log-${data.level}`;
-                entry.innerHTML = `<span class="log-timestamp">${data.timestamp}</span> ${data.message}`;
+                // Set max pages
+                document.getElementById('maxPages').value = preset.max_pages || 3;
 
-                logsDiv.appendChild(entry);
-                logsDiv.scrollTop = logsDiv.scrollHeight;
+                // Set detail pages
+                document.getElementById('detailPages').checked = preset.detail_pages !== false;
 
-                // Keep only last 500 entries
-                while (logsDiv.children.length > 500) {
-                    logsDiv.removeChild(logsDiv.firstChild);
+                // Set output format
+                setOutputFormat(preset.output_format || 'both');
+
+                // Set filters
+                const f = preset.filters || {};
+                document.getElementById('filterMinReviews').value = f.min_reviews || 0;
+                document.getElementById('filterMaxReviews').value = f.max_reviews || 0;
+                document.getElementById('filterMinBsr').value = f.min_bsr || 0;
+                document.getElementById('filterMaxBsr').value = f.max_bsr || 0;
+                document.getElementById('filterMinPrice').value = f.min_price || 0;
+                document.getElementById('filterMaxPrice').value = f.max_price || 0;
+                document.getElementById('filterMinRating').value = f.min_rating || 0;
+                document.getElementById('filterFbaOnly').checked = f.fba_only || false;
+                document.getElementById('filterProductTypes').value = (f.product_types || []).join(', ');
+                document.getElementById('filterExcludedBrands').value = (f.excluded_brands || []).join(', ');
+                document.getElementById('filterTitleKeywords').value = (f.title_keywords || []).join(', ');
+
+            } catch (e) { console.error('Failed to load preset:', e); }
+        }
+
+        // ============================================================
+        // Config Save/Load
+        // ============================================================
+        function getConfigFromForm() {
+            const catSelect = document.getElementById('categorySelect');
+            const selectedCats = Array.from(catSelect.selectedOptions).map(o => o.value);
+            return {
+                categories: selectedCats,
+                keywords: document.getElementById('keywords').value,
+                max_pages: parseInt(document.getElementById('maxPages').value),
+                detail_pages: document.getElementById('detailPages').checked,
+                concurrent: parseInt(document.getElementById('concurrent').value),
+                use_proxies: document.getElementById('useProxies').checked,
+                output_format: outputFormat,
+                filters: {
+                    min_reviews: parseInt(document.getElementById('filterMinReviews').value) || 0,
+                    max_reviews: parseInt(document.getElementById('filterMaxReviews').value) || 0,
+                    min_bsr: parseInt(document.getElementById('filterMinBsr').value) || 0,
+                    max_bsr: parseInt(document.getElementById('filterMaxBsr').value) || 0,
+                    min_price: parseFloat(document.getElementById('filterMinPrice').value) || 0,
+                    max_price: parseFloat(document.getElementById('filterMaxPrice').value) || 0,
+                    min_rating: parseFloat(document.getElementById('filterMinRating').value) || 0,
+                    fba_only: document.getElementById('filterFbaOnly').checked,
+                    product_types: document.getElementById('filterProductTypes').value.split(',').map(s => s.trim()).filter(Boolean),
+                    excluded_brands: document.getElementById('filterExcludedBrands').value.split(',').map(s => s.trim()).filter(Boolean),
+                    title_keywords: document.getElementById('filterTitleKeywords').value.split(',').map(s => s.trim()).filter(Boolean),
                 }
             };
         }
 
-        // Upload proxies
-        async function uploadProxies() {
-            const fileInput = document.getElementById('proxy-file');
-            const file = fileInput.files[0];
-
-            if (!file) return;
-
-            const formData = new FormData();
-            formData.append('file', file);
-
+        async function saveConfig() {
+            const name = prompt('Configuration name:');
+            if (!name) return;
             try {
-                const response = await fetch('/api/upload-proxies', {
+                const resp = await fetch('/api/save-config', {
                     method: 'POST',
-                    body: formData
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name, config: getConfigFromForm() })
                 });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    loadProxyStatus();
-                    showNotification('success', data.message);
-                } else {
-                    showNotification('error', data.error);
-                }
-            } catch (error) {
-                showNotification('error', `Error uploading proxies: ${error.message}`);
-            }
+                const data = await resp.json();
+                alert(data.message || data.error);
+            } catch (e) { alert('Error saving config: ' + e.message); }
         }
 
-        // Show notification
-        function showNotification(type, message) {
-            const logsDiv = document.getElementById('logs');
-            const entry = document.createElement('div');
-            entry.className = `log-entry log-${type === 'success' ? 'success' : 'error'}`;
-            entry.innerHTML = `<span class="log-timestamp">${new Date().toLocaleTimeString()}</span> ${message}`;
-            logsDiv.appendChild(entry);
-            logsDiv.scrollTop = logsDiv.scrollHeight;
-        }
-
-        // Load proxy status
-        async function loadProxyStatus() {
+        async function showLoadConfig() {
             try {
-                const response = await fetch('/api/proxy-status');
-                const data = await response.json();
-
-                const count = data.proxies.length;
-                document.getElementById('proxy-count-header').textContent = count;
-
-                if (count === 0) {
-                    document.getElementById('proxy-status').innerHTML = `
-                        <div class="proxy-empty">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
-                                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-                                <line x1="6" y1="6" x2="6.01" y2="6"></line>
-                                <line x1="6" y1="18" x2="6.01" y2="18"></line>
-                            </svg>
-                            <p>No proxies loaded</p>
-                            <p style="font-size: 12px; margin-top: 8px; opacity: 0.7;">Upload a proxy file to enable rotation</p>
-                        </div>
-                    `;
+                const resp = await fetch('/api/list-configs');
+                const data = await resp.json();
+                if (!data.configs || data.configs.length === 0) {
+                    alert('No saved configurations found.');
                     return;
                 }
+                const names = data.configs.map(c => c.name);
+                const name = prompt('Enter config name to load:\n\nAvailable: ' + names.join(', '));
+                if (!name) return;
 
-                const healthy = data.proxies.filter(p => !p.is_blocked).length;
-                const blocked = count - healthy;
-
-                document.getElementById('proxy-status').innerHTML = `
-                    <div class="proxy-status-card">
-                        <div class="proxy-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                            </svg>
-                        </div>
-                        <div class="proxy-info">
-                            <h3>${count} Proxies Loaded</h3>
-                            <p>${healthy} healthy &bull; ${blocked} blocked</p>
-                        </div>
-                    </div>
-                `;
-
-            } catch (error) {
-                console.error('Error loading proxy status:', error);
-            }
+                const loadResp = await fetch(`/api/load-config/${encodeURIComponent(name)}`);
+                const loadData = await loadResp.json();
+                if (loadData.config) {
+                    applyConfig(loadData.config);
+                    alert('Configuration loaded!');
+                } else {
+                    alert(loadData.error || 'Configuration not found');
+                }
+            } catch (e) { alert('Error: ' + e.message); }
         }
 
-        // Start scraping
+        function applyConfig(config) {
+            const catSelect = document.getElementById('categorySelect');
+            Array.from(catSelect.options).forEach(opt => {
+                opt.selected = (config.categories || []).includes(opt.value);
+            });
+            document.getElementById('keywords').value = config.keywords || '';
+            document.getElementById('maxPages').value = config.max_pages || 3;
+            document.getElementById('detailPages').checked = config.detail_pages !== false;
+            document.getElementById('concurrent').value = config.concurrent || 3;
+            document.getElementById('useProxies').checked = config.use_proxies !== false;
+            setOutputFormat(config.output_format || 'both');
+            const f = config.filters || {};
+            document.getElementById('filterMinReviews').value = f.min_reviews || 0;
+            document.getElementById('filterMaxReviews').value = f.max_reviews || 0;
+            document.getElementById('filterMinBsr').value = f.min_bsr || 0;
+            document.getElementById('filterMaxBsr').value = f.max_bsr || 0;
+            document.getElementById('filterMinPrice').value = f.min_price || 0;
+            document.getElementById('filterMaxPrice').value = f.max_price || 0;
+            document.getElementById('filterMinRating').value = f.min_rating || 0;
+            document.getElementById('filterFbaOnly').checked = f.fba_only || false;
+            document.getElementById('filterProductTypes').value = (f.product_types || []).join(', ');
+            document.getElementById('filterExcludedBrands').value = (f.excluded_brands || []).join(', ');
+            document.getElementById('filterTitleKeywords').value = (f.title_keywords || []).join(', ');
+        }
+
+        // ============================================================
+        // Scrape Control
+        // ============================================================
         async function startScrape() {
-            const keywords = document.getElementById('keywords').value;
-            const locations = document.getElementById('locations').value;
-            const max_pages = document.getElementById('max_pages').value;
-            const max_businesses = document.getElementById('max_businesses').value;
-            const use_proxies = document.getElementById('use_proxies').checked;
-            const concurrent = document.getElementById('concurrent').value;
-            const chunk_output = document.getElementById('chunk_output').checked;
-
-            if (!keywords || !locations) {
-                showNotification('error', 'Please enter keywords and locations');
-                return;
-            }
-
-            const startBtn = document.getElementById('start-btn');
-            startBtn.classList.add('btn-loading');
+            const config = getConfigFromForm();
+            if (!config.keywords.trim()) { alert('Please enter at least one keyword'); return; }
+            if (config.categories.length === 0) { alert('Please select at least one category'); return; }
 
             try {
-                const response = await fetch('/api/start-scrape', {
+                const resp = await fetch('/api/start-scrape', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        keywords,
-                        locations,
-                        max_pages,
-                        max_businesses,
-                        use_proxies,
-                        concurrent,
-                        chunk_output
-                    })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(config)
                 });
-
-                const data = await response.json();
-
+                const data = await resp.json();
                 if (data.success) {
-                    startBtn.disabled = true;
-                    document.getElementById('stop-btn').disabled = false;
-                    document.getElementById('progress-panel').style.display = 'block';
-                    document.getElementById('stat-total').textContent = data.total_searches;
-                    document.getElementById('download-section').style.display = 'none';
-                    document.getElementById('workers-header').textContent = concurrent;
-                    startTime = Date.now();
-                    scrapeStartedAt = Date.now();  // Track scrape start for grace period
-
-                    // 🚀 ENGAGE HYPERSPACE!
-                    Starfield.jumpToHyperspace();
-
-                    // Scroll to progress panel
-                    document.getElementById('progress-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                    const limitMsg = max_businesses > 0 ? ` (limit: ${formatNumber(max_businesses)} businesses)` : '';
-                    showNotification('success', `Started scraping ${data.total_searches} searches with ${concurrent} workers${limitMsg}`);
+                    isRunning = true;
+                    document.getElementById('btnStart').disabled = true;
+                    document.getElementById('btnStop').disabled = false;
+                    document.getElementById('progressPanel').style.display = 'block';
+                    triggerHyperspace();
                 } else {
-                    showNotification('error', data.error);
+                    alert(data.error || 'Failed to start scrape');
                 }
-            } catch (error) {
-                showNotification('error', error.message);
-            } finally {
-                startBtn.classList.remove('btn-loading');
-            }
+            } catch (e) { alert('Error: ' + e.message); }
         }
 
-        // Stop scraping
         async function stopScrape() {
             try {
                 await fetch('/api/stop-scrape', { method: 'POST' });
-                document.getElementById('start-btn').disabled = false;
-                document.getElementById('stop-btn').disabled = true;
-                scrapeStartedAt = null;  // Reset grace period tracking
+                isRunning = false;
+                document.getElementById('btnStart').disabled = false;
+                document.getElementById('btnStop').disabled = true;
+            } catch (e) { console.error(e); }
+        }
 
-                // 🛑 DROP FROM HYPERSPACE
-                Starfield.dropFromHyperspace();
+        // ============================================================
+        // Progress Polling
+        // ============================================================
+        function startProgressPolling() {
+            progressInterval = setInterval(async () => {
+                try {
+                    const resp = await fetch('/api/progress');
+                    const data = await resp.json();
+                    updateProgress(data);
+                } catch (e) {}
+            }, 1000);
+        }
 
-                showNotification('info', 'Scraper stopped');
-            } catch (error) {
-                showNotification('error', error.message);
+        function updateProgress(data) {
+            const p = data.progress || {};
+            const running = data.running;
+            const phase = data.phase || p.phase || 'idle';
+
+            // Update header stats
+            document.getElementById('statProducts').textContent = (p.products_found || 0).toLocaleString();
+            document.getElementById('statBrands').textContent = (p.brands_found || 0).toLocaleString();
+
+            if (running || p.total_searches) {
+                document.getElementById('progressPanel').style.display = 'block';
+            }
+
+            // Progress stats
+            const total = p.total_searches || 0;
+            const completed = p.completed || 0;
+            document.getElementById('progressSearches').textContent = `${completed}/${total}`;
+            document.getElementById('progressProducts').textContent = (p.products_found || 0).toLocaleString();
+            document.getElementById('progressBrands').textContent = (p.brands_found || 0).toLocaleString();
+            document.getElementById('progressCaptchas').textContent = p.captchas_hit || 0;
+
+            // Progress bar
+            const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('progressPercent').textContent = pct + '%';
+
+            // Phase
+            const phaseMap = { search: 'Searching', processing: 'Processing', complete: 'Complete', idle: 'Idle' };
+            document.getElementById('phaseBadge').textContent = phaseMap[phase] || phase;
+            document.getElementById('progressPhaseText').textContent = running ? `Phase: ${phaseMap[phase] || phase}` : (phase === 'complete' ? 'Scrape complete!' : 'Idle');
+
+            // Button states
+            if (!running && isRunning) {
+                isRunning = false;
+                document.getElementById('btnStart').disabled = false;
+                document.getElementById('btnStop').disabled = true;
+                loadResultFiles();
+                if (phase === 'complete') {
+                    document.getElementById('resultsPanel').style.display = 'block';
+                }
             }
         }
 
-        // Download results
-        function downloadResults() {
-            window.location.href = '/api/download';
+        // ============================================================
+        // Log Streaming
+        // ============================================================
+        function startLogStream() {
+            logEventSource = new EventSource('/api/logs');
+            logEventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.heartbeat) return;
+                addLogLine(data);
+            };
         }
 
-        // Download all results as zip
-        function downloadAllResults() {
-            window.location.href = '/api/download-all';
+        function addLogLine(entry) {
+            const container = document.getElementById('logContainer');
+            const div = document.createElement('div');
+            div.className = 'log-entry ' + (entry.level || 'info');
+            div.innerHTML = `<span class="log-time">${entry.timestamp || ''}</span><span class="log-msg">${escapeHtml(entry.message || '')}</span>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
         }
 
-        // Download specific file
+        // ============================================================
+        // Results & Downloads
+        // ============================================================
+        async function loadResultFiles() {
+            try {
+                const resp = await fetch('/api/list-results');
+                const data = await resp.json();
+                const list = document.getElementById('filesList');
+                list.innerHTML = '';
+                if (data.files && data.files.length > 0) {
+                    document.getElementById('resultsPanel').style.display = 'block';
+                    data.files.forEach(file => {
+                        const div = document.createElement('div');
+                        div.className = 'file-item';
+                        const sizeKB = (file.size / 1024).toFixed(1);
+                        div.innerHTML = `
+                            <div>
+                                <div class="file-item-name">${file.filename}</div>
+                                <div class="file-item-meta">${sizeKB} KB | ${file.rows || 0} rows | ${file.created}</div>
+                            </div>
+                            <div style="display:flex;gap:8px">
+                                <button class="btn btn-primary" onclick="downloadFile('${file.filename}')" style="flex:none;padding:8px 14px;font-size:12px">Download</button>
+                                <button class="btn btn-danger" onclick="deleteFile('${file.filename}')" style="flex:none;padding:8px 14px;font-size:12px">Delete</button>
+                            </div>
+                        `;
+                        list.appendChild(div);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
         function downloadFile(filename) {
             window.location.href = '/api/download?file=' + encodeURIComponent(filename);
         }
 
-        // Format file size
-        function formatSize(bytes) {
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        function downloadAll() {
+            window.location.href = '/api/download-all';
         }
 
-        // Format number with commas
-        function formatNumber(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
-
-        // Load previous results
-        async function loadPreviousResults() {
-            try {
-                const response = await fetch('/api/list-results');
-                const data = await response.json();
-
-                if (data.files && data.files.length > 0) {
-                    document.getElementById('results-panel').style.display = 'block';
-
-                    let html = `
-                        <div class="results-header">
-                            <span class="results-count">${data.files.length} file${data.files.length > 1 ? 's' : ''}</span>
-                            <button class="btn-clear-all" onclick="clearAllResults()">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                                Clear All
-                            </button>
-                        </div>
-                    `;
-                    data.files.forEach((file, index) => {
-                        html += `
-                            <div class="result-file" style="animation-delay: ${index * 0.1}s">
-                                <div class="result-info">
-                                    <div class="result-name">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                            <polyline points="14 2 14 8 20 8"></polyline>
-                                        </svg>
-                                        ${file.filename}
-                                    </div>
-                                    <div class="result-meta">
-                                        <span>${file.created}</span>
-                                        <span>${formatSize(file.size)}</span>
-                                        <span>${formatNumber(file.rows)} rows</span>
-                                    </div>
-                                </div>
-                                <div class="result-actions">
-                                    <button class="btn-small" onclick="downloadFile('${file.filename}')">
-                                        Download
-                                    </button>
-                                    <button class="btn-delete" onclick="deleteFile('${file.filename}')" title="Delete file">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    });
-
-                    document.getElementById('results-list').innerHTML = html;
-                } else {
-                    document.getElementById('results-panel').style.display = 'none';
-                }
-            } catch (error) {
-                console.error('Error loading previous results:', error);
-            }
-        }
-
-        // Update progress
-        async function updateProgress() {
-            try {
-                const response = await fetch('/api/progress');
-                const data = await response.json();
-
-                if (data.progress) {
-                    const completed = data.progress.completed || 0;
-                    const total = data.progress.total_searches || 0;
-                    const businesses = data.progress.businesses_found || 0;
-                    const maxBusinesses = data.progress.max_businesses || 0;
-
-                    // Calculate progress percentage:
-                    // If max_businesses limit is set, use businesses found vs limit
-                    // Otherwise, use searches completed vs total searches
-                    let percent;
-                    if (maxBusinesses > 0) {
-                        percent = Math.min(100, (businesses / maxBusinesses) * 100);
-                    } else {
-                        percent = total > 0 ? (completed / total * 100) : 0;
-                    }
-
-                    document.getElementById('progress-bar').style.width = percent + '%';
-                    document.getElementById('stat-completed').textContent = formatNumber(completed);
-                    document.getElementById('stat-businesses').textContent = formatNumber(businesses);
-
-                    // Calculate rate (businesses per minute if limit set, otherwise searches per minute)
-                    if (startTime && completed > 0) {
-                        const elapsed = (Date.now() - startTime) / 1000 / 60; // minutes
-                        if (maxBusinesses > 0 && businesses > 0) {
-                            const bizRate = Math.round(businesses / elapsed);
-                            document.getElementById('stat-rate').textContent = formatNumber(bizRate) + ' biz';
-                        } else {
-                            const rate = Math.round(completed / elapsed);
-                            document.getElementById('stat-rate').textContent = formatNumber(rate);
-                        }
-                    }
-                }
-
-                // Show download buttons
-                if (data.output_files && data.output_files.length > 0) {
-                    document.getElementById('download-section').style.display = 'flex';
-                    if (data.output_files.length > 1) {
-                        document.getElementById('download-all-btn').style.display = 'flex';
-                    }
-                }
-
-                // Check if scraping has finished
-                // Use grace period to prevent false completion detection due to file read race conditions
-                const stopBtn = document.getElementById('stop-btn');
-                const isWithinGracePeriod = scrapeStartedAt && (Date.now() - scrapeStartedAt < SCRAPE_GRACE_PERIOD);
-                const hasActuallyCompleted = !data.running && stopBtn.disabled === false && !isWithinGracePeriod;
-
-                // Also check if we have progress data indicating work was done (additional safety)
-                const hasProgress = data.progress && (data.progress.completed > 0 || data.progress.businesses_found > 0);
-
-                if (hasActuallyCompleted && (hasProgress || !isWithinGracePeriod)) {
-                    document.getElementById('start-btn').disabled = false;
-                    stopBtn.disabled = true;
-                    scrapeStartedAt = null;  // Reset for next scrape
-
-                    // 🛑 DROP FROM HYPERSPACE - We've arrived!
-                    Starfield.dropFromHyperspace();
-
-                    // Update progress panel to show completion
-                    document.querySelector('.progress-header h2').textContent = 'Scraping Complete';
-                    document.querySelector('.running-indicator').style.background = 'var(--success)';
-                    document.querySelector('.running-indicator').style.animation = 'none';
-
-                    // Hide progress panel after 5 seconds
-                    setTimeout(() => {
-                        document.getElementById('progress-panel').style.display = 'none';
-                        // Reset for next scrape
-                        document.querySelector('.progress-header h2').textContent = 'Scraping in Progress';
-                        document.querySelector('.running-indicator').style.animation = 'pulseIndicator 1.5s ease-in-out infinite';
-                    }, 5000);
-
-                    loadPreviousResults();
-                }
-            } catch (error) {
-                console.error('Error updating progress:', error);
-            }
-        }
-
-        // Delete a specific result file
         async function deleteFile(filename) {
-            if (!confirm(`Delete ${filename}?`)) return;
-
+            if (!confirm('Delete ' + filename + '?')) return;
             try {
-                const response = await fetch('/api/delete-result', {
+                await fetch('/api/delete-result', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ filename })
                 });
-                const data = await response.json();
-
-                if (data.success) {
-                    showNotification('success', `Deleted ${filename}`);
-                    loadPreviousResults();
-                } else {
-                    showNotification('error', data.error || 'Failed to delete file');
-                }
-            } catch (error) {
-                showNotification('error', 'Error deleting file: ' + error.message);
-            }
+                loadResultFiles();
+            } catch (e) { console.error(e); }
         }
 
-        // Clear all result files
-        async function clearAllResults() {
-            if (!confirm('Delete ALL result files? This cannot be undone.')) return;
-
+        async function previewResults() {
             try {
-                const response = await fetch('/api/clear-results', {
-                    method: 'POST'
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    showNotification('success', `Deleted ${data.deleted} files`);
-                    loadPreviousResults();
-                } else {
-                    showNotification('error', data.error || 'Failed to clear files');
-                }
-            } catch (error) {
-                showNotification('error', 'Error clearing files: ' + error.message);
-            }
+                const resp = await fetch('/api/preview-results');
+                const data = await resp.json();
+                previewData = data.brands || [];
+                renderResultsTable();
+                document.getElementById('resultsTableContainer').style.display = 'block';
+            } catch (e) { console.error(e); }
         }
 
-        // Counter animation
-        function animateValue(element, start, end, duration) {
-            const range = end - start;
-            const startTime = performance.now();
+        function renderResultsTable() {
+            const body = document.getElementById('resultsBody');
+            body.innerHTML = '';
 
-            function update(currentTime) {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const easeOut = 1 - Math.pow(1 - progress, 3);
-                const current = Math.floor(start + range * easeOut);
-                element.textContent = formatNumber(current);
-
-                if (progress < 1) {
-                    requestAnimationFrame(update);
-                }
-            }
-
-            requestAnimationFrame(update);
-        }
-
-        // Initialize
-        connectLogStream();
-        loadProxyStatus();
-        loadPreviousResults();
-        setInterval(updateProgress, 1000);
-        setInterval(loadProxyStatus, 10000);
-        setInterval(loadPreviousResults, 30000);
-
-        // Add smooth reveal animation on scroll
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
+            // Sort
+            previewData.sort((a, b) => {
+                let va = a[sortField] || 0;
+                let vb = b[sortField] || 0;
+                if (typeof va === 'string') va = va.toLowerCase();
+                if (typeof vb === 'string') vb = vb.toLowerCase();
+                const numA = parseFloat(va) || 0;
+                const numB = parseFloat(vb) || 0;
+                if (!isNaN(numA) && !isNaN(numB)) { va = numA; vb = numB; }
+                if (sortAsc) return va > vb ? 1 : -1;
+                return va < vb ? 1 : -1;
             });
-        }, { threshold: 0.1 });
 
-        document.querySelectorAll('.panel, .progress-panel, .logs-panel, .results-panel').forEach(el => {
-            observer.observe(el);
-        });
-
-        // AI Suggestion Modal Functions
-        let aiSuggestions = { keywords: [], locations: [] };
-
-        function openAiModal() {
-            document.getElementById('ai-modal').classList.add('active');
-            document.getElementById('icp-input').focus();
-            // Reset modal state
-            document.getElementById('ai-results').style.display = 'none';
-            document.getElementById('ai-error').style.display = 'none';
-            document.getElementById('ai-generate-btn').style.display = 'flex';
-            document.getElementById('ai-apply-btn').style.display = 'none';
+            previewData.forEach(brand => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600;color:var(--white)">${escapeHtml(brand.brand || '')}</td>
+                    <td>${brand.total_products || 0}</td>
+                    <td>${parseInt(brand.total_reviews || 0).toLocaleString()}</td>
+                    <td>${brand.avg_rating || 0}</td>
+                    <td>$${parseFloat(brand.price_avg || 0).toFixed(2)}</td>
+                    <td>${parseInt(brand.avg_bsr || 0).toLocaleString()}</td>
+                    <td style="color:var(--success);font-weight:600">$${parseFloat(brand.estimated_monthly_revenue || 0).toLocaleString()}</td>
+                    <td>${brand.fba_percentage || 0}%</td>
+                `;
+                body.appendChild(tr);
+            });
         }
 
-        function closeAiModal() {
-            document.getElementById('ai-modal').classList.remove('active');
+        function sortResults(field) {
+            if (sortField === field) { sortAsc = !sortAsc; }
+            else { sortField = field; sortAsc = false; }
+            renderResultsTable();
         }
 
-        async function generateAiSuggestions() {
-            const icp = document.getElementById('icp-input').value.trim();
+        // ============================================================
+        // UI Helpers
+        // ============================================================
+        function setOutputFormat(fmt) {
+            outputFormat = fmt;
+            document.querySelectorAll('.radio-option').forEach(el => {
+                el.classList.toggle('active', el.querySelector('input').value === fmt);
+            });
+        }
 
-            if (!icp) {
-                showAiError('Please describe your Ideal Customer Profile first.');
-                return;
-            }
+        function toggleCollapsible(header) {
+            header.classList.toggle('open');
+            const body = header.nextElementSibling;
+            body.classList.toggle('open');
+        }
 
-            const btn = document.getElementById('ai-generate-btn');
-            btn.classList.add('loading');
-            btn.disabled = true;
-            document.getElementById('ai-error').style.display = 'none';
-            document.getElementById('ai-results').style.display = 'none';
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
-            try {
-                const response = await fetch('/api/ai-suggestions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ icp })
+        // ============================================================
+        // Starfield Animation
+        // ============================================================
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        let hyperspaceMode = false;
+        let hyperspaceStartTime = 0;
+
+        function initStarfield() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            stars = [];
+            for (let i = 0; i < 200; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width - canvas.width / 2,
+                    y: Math.random() * canvas.height - canvas.height / 2,
+                    z: Math.random() * 1000,
+                    size: Math.random() * 1.5 + 0.5,
+                    color: `hsl(${Math.random() * 60 + 220}, 80%, ${Math.random() * 40 + 60}%)`
                 });
+            }
+        }
 
-                const data = await response.json();
+        function animateStarfield() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const speed = hyperspaceMode ? 40 : 0.5;
 
-                if (data.error) {
-                    showAiError(data.error);
-                    return;
+            stars.forEach(star => {
+                star.z -= speed;
+                if (star.z <= 0) {
+                    star.z = 1000;
+                    star.x = Math.random() * canvas.width - cx;
+                    star.y = Math.random() * canvas.height - cy;
+                }
+                const sx = (star.x / star.z) * 500 + cx;
+                const sy = (star.y / star.z) * 500 + cy;
+                const size = (1 - star.z / 1000) * star.size * (hyperspaceMode ? 3 : 2);
+                const alpha = 1 - star.z / 1000;
+
+                if (hyperspaceMode) {
+                    const prevZ = star.z + speed;
+                    const psx = (star.x / prevZ) * 500 + cx;
+                    const psy = (star.y / prevZ) * 500 + cy;
+                    ctx.beginPath();
+                    ctx.moveTo(psx, psy);
+                    ctx.lineTo(sx, sy);
+                    ctx.strokeStyle = `rgba(167, 139, 250, ${alpha * 0.8})`;
+                    ctx.lineWidth = size;
+                    ctx.stroke();
                 }
 
-                // Store suggestions
-                aiSuggestions = {
-                    keywords: data.keywords || [],
-                    locations: data.locations || []
-                };
+                ctx.beginPath();
+                ctx.arc(sx, sy, Math.max(0.3, size / 2), 0, Math.PI * 2);
+                ctx.fillStyle = hyperspaceMode ? `rgba(167, 139, 250, ${alpha})` : star.color;
+                ctx.fill();
+            });
 
-                // Display keywords
-                const keywordsDiv = document.getElementById('ai-keywords');
-                keywordsDiv.innerHTML = aiSuggestions.keywords.map(k =>
-                    `<span class="ai-tag">${k}</span>`
-                ).join('');
-
-                // Display locations
-                const locationsDiv = document.getElementById('ai-locations');
-                locationsDiv.innerHTML = aiSuggestions.locations.map(l =>
-                    `<span class="ai-tag">${l}</span>`
-                ).join('');
-
-                // Show results and apply button
-                document.getElementById('ai-results').style.display = 'block';
-                document.getElementById('ai-generate-btn').style.display = 'none';
-                document.getElementById('ai-apply-btn').style.display = 'flex';
-
-            } catch (error) {
-                showAiError('Failed to connect to AI service: ' + error.message);
-            } finally {
-                btn.classList.remove('loading');
-                btn.disabled = false;
-            }
+            requestAnimationFrame(animateStarfield);
         }
 
-        function showAiError(message) {
-            const errorDiv = document.getElementById('ai-error');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+        function triggerHyperspace() {
+            hyperspaceMode = true;
+            document.getElementById('hyperspaceFlash').classList.add('active');
+            document.getElementById('hyperspaceVignette').classList.add('active');
+            setTimeout(() => {
+                hyperspaceMode = false;
+                document.getElementById('hyperspaceFlash').classList.remove('active');
+                document.getElementById('hyperspaceVignette').classList.remove('active');
+            }, 3000);
         }
 
-        function applyAiSuggestions() {
-            // Apply keywords to the keywords textarea (comma-separated)
-            const keywordsField = document.getElementById('keywords');
-            if (keywordsField && aiSuggestions.keywords.length > 0) {
-                keywordsField.value = aiSuggestions.keywords.join(', ');
-            }
-
-            // Apply locations to the locations textarea (comma-separated)
-            const locationsField = document.getElementById('locations');
-            if (locationsField && aiSuggestions.locations.length > 0) {
-                locationsField.value = aiSuggestions.locations.join(', ');
-            }
-
-            // Close modal and show notification
-            closeAiModal();
-            showNotification('success', `Applied ${aiSuggestions.keywords.length} keywords and ${aiSuggestions.locations.length} locations`);
-        }
-
-        // Close modal on escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeAiModal();
-            }
-        });
-
-        // Close modal on overlay click
-        document.getElementById('ai-modal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeAiModal();
-            }
-        });
+        window.addEventListener('resize', initStarfield);
+        initStarfield();
+        animateStarfield();
     </script>
 </body>
 </html>

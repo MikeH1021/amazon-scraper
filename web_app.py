@@ -1,6 +1,6 @@
 """
-Web UI for Yellow Pages Scraper
-Simple interface for configuring and running scrapes with real-time monitoring
+Web UI for Amazon Brand Scraper
+Interface for configuring and running Amazon product/brand research with real-time monitoring
 """
 
 from flask import Flask, render_template, request, jsonify, Response, send_file, redirect, url_for, flash
@@ -15,14 +15,22 @@ from datetime import datetime
 from queue import Queue
 import time
 import math
+import csv
+import zipfile
+from io import BytesIO
 import pandas as pd
 import sqlite3
 
-from yellowpages_scraper import YellowPagesScraper
+from amazon_scraper import AmazonScraper
+from amazon_categories import get_all_categories, get_category
+from amazon_presets import get_all_presets, get_preset_full
+from amazon_filters import ProductFilter
+from bsr_calculator import estimate_monthly_sales, estimate_monthly_revenue
+from brand_aggregator import BrandAggregator
 from proxy_manager import ProxyManager
 
 app = Flask(__name__, static_folder='static')
-app.secret_key = os.environ.get('SECRET_KEY', 'yp-scraper-secret-key-change-in-production')  # Required for session management
+app.secret_key = os.environ.get('SECRET_KEY', 'amazon-scraper-secret-key-change-in-production')
 CORS(app)
 
 # Flask-Login setup
@@ -41,7 +49,7 @@ def get_db():
     return conn
 
 def init_db():
-    """Initialize the database with users and settings tables"""
+    """Initialize the database with users, settings, and scrape_configs tables"""
     conn = get_db()
     conn.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -53,7 +61,6 @@ def init_db():
         )
     ''')
 
-    # Settings table for storing API keys and other configuration
     conn.execute('''
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
@@ -61,9 +68,21 @@ def init_db():
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS scrape_configs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            config_json TEXT NOT NULL,
+            created_by TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
     conn.commit()
 
-    # Create default admin user if not exists (use INSERT OR IGNORE to handle race conditions)
+    # Create default admin user if not exists
     try:
         cursor = conn.execute('SELECT * FROM users WHERE username = ?', ('mike',))
         if cursor.fetchone() is None:
@@ -136,8 +155,8 @@ def load_user(user_id):
 init_db()
 
 # File-based state for multi-worker support
-STATE_FILE = "/tmp/yp_scraper_state.json"
-LOG_FILE = "/tmp/yp_scraper_logs.json"
+STATE_FILE = "/tmp/amazon_scraper_state.json"
+LOG_FILE = "/tmp/amazon_scraper_logs.json"
 
 def get_shared_state():
     """Read shared state from file with retry logic"""
@@ -147,11 +166,11 @@ def get_shared_state():
             if os.path.exists(STATE_FILE):
                 with open(STATE_FILE, 'r') as f:
                     content = f.read()
-                    if content.strip():  # Only parse if file has content
+                    if content.strip():
                         return json.loads(content)
         except (json.JSONDecodeError, IOError) as e:
             if attempt < max_retries - 1:
-                time.sleep(0.1)  # Brief pause before retry
+                time.sleep(0.1)
                 continue
             print(f"Error reading state file (attempt {attempt + 1}): {e}")
         except Exception as e:
@@ -161,24 +180,21 @@ def get_shared_state():
         "running": False,
         "progress": {},
         "last_output_file": None,
-        "output_files": []
+        "output_files": [],
+        "phase": "idle"
     }
 
 def set_shared_state(state):
     """Write shared state to file atomically with fsync"""
     temp_file = STATE_FILE + '.tmp'
     try:
-        # Write to temp file first
         with open(temp_file, 'w') as f:
             json.dump(state, f)
             f.flush()
-            os.fsync(f.fileno())  # Force write to disk
-
-        # Atomic rename
+            os.fsync(f.fileno())
         os.replace(temp_file, STATE_FILE)
     except Exception as e:
         print(f"Error saving state: {e}")
-        # Cleanup temp file if it exists
         try:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
@@ -193,7 +209,6 @@ def add_log_entry(entry):
             with open(LOG_FILE, 'r') as f:
                 logs = json.load(f)
         logs.append(entry)
-        # Keep only last 500 logs
         if len(logs) > 500:
             logs = logs[-500:]
         with open(LOG_FILE, 'w') as f:
@@ -220,7 +235,7 @@ def clear_logs():
     except:
         pass
 
-# Global state (for in-process items that don't need sharing)
+# Global state
 scraper_state = {
     "running": False,
     "progress": {},
@@ -228,7 +243,8 @@ scraper_state = {
     "proxy_manager": None,
     "current_scraper": None,
     "last_output_file": None,
-    "output_files": []  # For chunked output
+    "output_files": [],
+    "phase": "idle"
 }
 
 # Auto-load proxies on startup
@@ -245,10 +261,16 @@ def cleanup_old_results():
     try:
         deleted = 0
         now = time.time()
-        one_day_ago = now - (24 * 60 * 60)  # 24 hours in seconds
+        one_day_ago = now - (24 * 60 * 60)
 
         for file in os.listdir('.'):
-            if file.startswith('scrape_results_') and file.endswith('.csv'):
+            is_result = (
+                (file.startswith('products_') and file.endswith('.csv'))
+                or (file.startswith('brands_') and file.endswith('.csv'))
+                or (file.startswith('results_') and file.endswith('.json'))
+                or (file.startswith('scrape_results_') and file.endswith('.csv'))
+            )
+            if is_result:
                 file_mtime = os.path.getmtime(file)
                 if file_mtime < one_day_ago:
                     os.remove(file)
@@ -266,9 +288,8 @@ def start_cleanup_scheduler():
 
     def scheduler_loop():
         while True:
-            # Run cleanup at startup and then every 24 hours
             cleanup_old_results()
-            time_module.sleep(24 * 60 * 60)  # Sleep for 24 hours
+            time_module.sleep(24 * 60 * 60)
 
     cleanup_thread = threading.Thread(target=scheduler_loop, daemon=True)
     cleanup_thread.start()
@@ -277,37 +298,6 @@ def start_cleanup_scheduler():
 load_proxies_on_startup()
 start_cleanup_scheduler()
 
-
-def save_chunked_csv(businesses, base_filename, chunk_size=50000):
-    """Save businesses to multiple CSV files if over chunk_size rows"""
-    if not businesses:
-        return []
-
-    output_files = []
-    total_rows = len(businesses)
-    num_chunks = math.ceil(total_rows / chunk_size)
-
-    if num_chunks == 1:
-        # Single file
-        df = pd.DataFrame(businesses)
-        df.to_csv(base_filename, index=False, encoding='utf-8')
-        output_files.append(base_filename)
-    else:
-        # Multiple chunks
-        for i in range(num_chunks):
-            start_idx = i * chunk_size
-            end_idx = min((i + 1) * chunk_size, total_rows)
-            chunk_businesses = businesses[start_idx:end_idx]
-
-            # Create filename with chunk number
-            name_parts = base_filename.rsplit('.', 1)
-            chunk_filename = f"{name_parts[0]}_part{i+1}of{num_chunks}.csv"
-
-            df = pd.DataFrame(chunk_businesses)
-            df.to_csv(chunk_filename, index=False, encoding='utf-8')
-            output_files.append(chunk_filename)
-
-    return output_files
 
 class WebLogger:
     """Logger that pushes to web UI via file-based shared state"""
@@ -320,9 +310,7 @@ class WebLogger:
             "message": message,
             "timestamp": datetime.now().strftime("%H:%M:%S")
         }
-        # Add to file-based shared logs
         add_log_entry(entry)
-        # Also add to queue for backward compatibility
         if self.log_queue:
             self.log_queue.put(entry)
 
@@ -334,6 +322,11 @@ class WebLogger:
 
     def success(self, message):
         self._add_log("success", message)
+
+
+# ============================================================
+# Page Routes
+# ============================================================
 
 @app.route('/')
 @login_required
@@ -403,7 +396,6 @@ def add_user():
         flash('Password must be at least 6 characters', 'error')
         return redirect(url_for('admin'))
 
-    # Check if user exists
     existing = User.get_by_username(username)
     if existing:
         flash('Username already exists', 'error')
@@ -454,7 +446,6 @@ def settings():
         flash('Access denied. Admin privileges required.', 'error')
         return redirect(url_for('index'))
 
-    # Get current settings (mask API key for display)
     openai_key = get_setting('openai_api_key', '')
     masked_key = ''
     if openai_key:
@@ -479,101 +470,135 @@ def save_settings():
 
     return redirect(url_for('settings'))
 
-@app.route('/api/ai-suggestions', methods=['POST'])
+
+# ============================================================
+# Amazon-specific API Routes
+# ============================================================
+
+@app.route('/api/categories')
 @login_required
-def ai_suggestions():
-    """Get AI-powered keyword and location suggestions from OpenAI"""
+def api_categories():
+    """Get all Amazon categories and subcategories"""
+    return jsonify(get_all_categories())
+
+@app.route('/api/presets')
+@login_required
+def api_presets():
+    """Get list of available presets"""
+    return jsonify(get_all_presets())
+
+@app.route('/api/preset/<name>')
+@login_required
+def api_preset(name):
+    """Get full preset configuration"""
+    preset = get_preset_full(name)
+    if not preset:
+        return jsonify({"error": "Preset not found"}), 404
+    return jsonify(preset)
+
+@app.route('/api/save-config', methods=['POST'])
+@login_required
+def save_config():
+    """Save a scrape configuration"""
     try:
-        import requests
-
         data = request.json
-        icp = data.get('icp', '').strip()
+        name = data.get('name', '').strip()
+        if not name:
+            return jsonify({"error": "Configuration name is required"}), 400
 
-        if not icp:
-            return jsonify({"error": "Please provide an Ideal Customer Profile"}), 400
+        config_json = json.dumps(data.get('config', {}))
 
-        # Get OpenAI API key from settings
-        api_key = get_setting('openai_api_key')
-        if not api_key:
-            return jsonify({"error": "OpenAI API key not configured. Please add it in Settings."}), 400
+        conn = get_db()
+        conn.execute('''
+            INSERT OR REPLACE INTO scrape_configs (name, config_json, created_by, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ''', (name, config_json, current_user.username))
+        conn.commit()
+        conn.close()
 
-        # Call OpenAI API
-        prompt = f"""Based on the following Ideal Customer Profile (ICP), suggest business categories/keywords and US locations to search on Yellow Pages for lead generation.
-
-ICP: {icp}
-
-Provide your response in this exact JSON format:
-{{
-    "keywords": ["keyword1", "keyword2", ...],
-    "locations": ["City ST", "City ST", ...]
-}}
-
-Rules:
-- Keywords should be Yellow Pages business categories (e.g., "plumbers", "roofing contractors", "HVAC services")
-- Provide up to 50 relevant keywords
-- Locations should be in "City ST" format (e.g., "Miami FL", "Chicago IL")
-- Provide up to 50 US locations that match the ICP's target market
-- Focus on locations where the ICP's target customers are likely to be
-- Only return the JSON object, no other text"""
-
-        response = requests.post(
-            'https://api.openai.com/v1/chat/completions',
-            headers={
-                'Authorization': f'Bearer {api_key}',
-                'Content-Type': 'application/json'
-            },
-            json={
-                'model': 'gpt-4o-mini',
-                'messages': [
-                    {'role': 'system', 'content': 'You are a helpful assistant that provides business lead generation suggestions. Always respond with valid JSON only.'},
-                    {'role': 'user', 'content': prompt}
-                ],
-                'temperature': 0.7,
-                'max_tokens': 2000
-            },
-            timeout=60
-        )
-
-        if response.status_code != 200:
-            error_msg = response.json().get('error', {}).get('message', 'Unknown error')
-            return jsonify({"error": f"OpenAI API error: {error_msg}"}), 500
-
-        result = response.json()
-        content = result['choices'][0]['message']['content'].strip()
-
-        # Parse JSON from response (handle markdown code blocks)
-        if content.startswith('```'):
-            content = content.split('```')[1]
-            if content.startswith('json'):
-                content = content[4:]
-        content = content.strip()
-
-        suggestions = json.loads(content)
-
-        # Get arrays from response
-        keywords = suggestions.get('keywords', [])
-        locations = suggestions.get('locations', [])
-
-        # Ensure they are lists
-        if not isinstance(keywords, list):
-            keywords = []
-        if not isinstance(locations, list):
-            locations = []
-
-        return jsonify({
-            "success": True,
-            "keywords": keywords,
-            "locations": locations,
-            "keyword_count": len(keywords),
-            "location_count": len(locations)
-        })
-
-    except json.JSONDecodeError as e:
-        return jsonify({"error": f"Failed to parse AI response: {str(e)}"}), 500
-    except requests.exceptions.Timeout:
-        return jsonify({"error": "OpenAI API request timed out. Please try again."}), 500
+        return jsonify({"success": True, "message": f"Configuration '{name}' saved"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/load-config/<name>')
+@login_required
+def load_config(name):
+    """Load a saved scrape configuration"""
+    try:
+        conn = get_db()
+        cursor = conn.execute('SELECT config_json FROM scrape_configs WHERE name = ?', (name,))
+        row = cursor.fetchone()
+        conn.close()
+
+        if not row:
+            return jsonify({"error": "Configuration not found"}), 404
+
+        config = json.loads(row['config_json'])
+        return jsonify({"success": True, "config": config})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/list-configs')
+@login_required
+def list_configs():
+    """List all saved configurations"""
+    try:
+        conn = get_db()
+        cursor = conn.execute('SELECT name, created_by, created_at, updated_at FROM scrape_configs ORDER BY updated_at DESC')
+        configs = [{"name": r['name'], "created_by": r['created_by'],
+                    "created_at": r['created_at'], "updated_at": r['updated_at']}
+                   for r in cursor.fetchall()]
+        conn.close()
+        return jsonify({"configs": configs})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/delete-config/<name>', methods=['DELETE'])
+@login_required
+def delete_config(name):
+    """Delete a saved configuration"""
+    try:
+        conn = get_db()
+        conn.execute('DELETE FROM scrape_configs WHERE name = ?', (name,))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": f"Configuration '{name}' deleted"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/preview-results')
+@login_required
+def preview_results():
+    """Preview the latest scrape results (brand-level summary)"""
+    try:
+        shared = get_shared_state()
+        output_files = shared.get("output_files", [])
+
+        # Try to find the brands CSV
+        brands_file = None
+        for f in output_files:
+            if f.startswith('brands_') and f.endswith('.csv'):
+                brands_file = f
+                break
+
+        if not brands_file or not os.path.exists(brands_file):
+            return jsonify({"brands": [], "total": 0})
+
+        # Read the brands CSV
+        brands = []
+        with open(brands_file, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                brands.append(row)
+
+        return jsonify({"brands": brands[:100], "total": len(brands)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ============================================================
+# Proxy Routes
+# ============================================================
 
 @app.route('/api/upload-proxies', methods=['POST'])
 @login_required
@@ -587,12 +612,8 @@ def upload_proxies():
         if file.filename == '':
             return jsonify({"error": "No file selected"}), 400
 
-        # Save to proxies.txt
         file.save('proxies.txt')
-
-        # Reload proxy manager
         scraper_state["proxy_manager"] = ProxyManager.from_file('proxies.txt', validate=False)
-
         proxy_count = len(scraper_state["proxy_manager"].proxies)
 
         return jsonify({
@@ -600,7 +621,6 @@ def upload_proxies():
             "proxy_count": proxy_count,
             "message": f"Loaded {proxy_count} proxies"
         })
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -625,65 +645,78 @@ def proxy_status():
 
     return jsonify({"proxies": proxies})
 
+
+# ============================================================
+# Scrape Control Routes
+# ============================================================
+
 @app.route('/api/start-scrape', methods=['POST'])
 @login_required
 def start_scrape():
-    """Start a new scraping job"""
+    """Start a new Amazon scraping job"""
     try:
         data = request.json
 
-        # Parse comma-separated inputs
-        keywords = [k.strip() for k in data.get('keywords', '').split(',') if k.strip()]
-        locations = [l.strip() for l in data.get('locations', '').split(',') if l.strip()]
+        # Parse inputs
+        categories = data.get('categories', ['health'])
+        keywords_raw = data.get('keywords', '')
+        if isinstance(keywords_raw, str):
+            keywords = [k.strip() for k in keywords_raw.split('\n') if k.strip()]
+            if not keywords:
+                keywords = [k.strip() for k in keywords_raw.split(',') if k.strip()]
+        else:
+            keywords = keywords_raw
 
-        if not keywords or not locations:
-            return jsonify({"error": "Please provide keywords and locations"}), 400
+        if not keywords:
+            return jsonify({"error": "Please provide at least one keyword"}), 400
 
-        max_pages = int(data.get('max_pages', 10))
-        max_businesses = int(data.get('max_businesses', 0))  # 0 = unlimited
+        max_pages = int(data.get('max_pages', 3))
+        detail_pages = data.get('detail_pages', True)
         use_proxies = data.get('use_proxies', True)
-        concurrent = int(data.get('concurrent', 1))
-        chunk_output = data.get('chunk_output', False)  # New: chunked output option
+        concurrent = int(data.get('concurrent', 3))
+        output_format = data.get('output_format', 'both')
+        filters_config = data.get('filters', {})
 
-        # Build search list
+        # Build search list: each keyword x each category
         searches = []
-        for location in locations:
-            for keyword in keywords:
+        for keyword in keywords:
+            for cat_key in categories:
                 searches.append({
-                    "term": keyword,
-                    "location": location
+                    "category_key": cat_key,
+                    "keyword": keyword,
                 })
 
         # Update state
         scraper_state["running"] = True
+        scraper_state["phase"] = "search"
         scraper_state["progress"] = {
             "total_searches": len(searches),
             "completed": 0,
-            "businesses_found": 0,
-            "max_businesses": max_businesses,
-            "limit_reached": False
+            "products_found": 0,
+            "brands_found": 0,
+            "captchas_hit": 0,
+            "phase": "search",
         }
-        scraper_state["output_files"] = []  # Reset output files
+        scraper_state["output_files"] = []
 
-        # Update shared state for multi-worker support
         set_shared_state({
             "running": True,
             "progress": scraper_state["progress"],
             "last_output_file": None,
-            "output_files": []
+            "output_files": [],
+            "phase": "search"
         })
 
-        # Clear logs
         clear_logs()
 
-        # Clear log queue
         while not scraper_state["log_queue"].empty():
             scraper_state["log_queue"].get()
 
         # Start scraper in background thread
         thread = threading.Thread(
             target=run_scraper_async,
-            args=(searches, max_pages, use_proxies, concurrent, chunk_output, max_businesses)
+            args=(searches, max_pages, detail_pages, use_proxies, concurrent,
+                  output_format, filters_config, categories)
         )
         thread.daemon = True
         thread.start()
@@ -691,7 +724,7 @@ def start_scrape():
         return jsonify({
             "success": True,
             "total_searches": len(searches),
-            "message": f"Started scraping {len(searches)} searches"
+            "message": f"Started scraping {len(searches)} searches ({len(keywords)} keywords x {len(categories)} categories)"
         })
 
     except Exception as e:
@@ -703,7 +736,11 @@ def start_scrape():
 def stop_scrape():
     """Stop current scraping job"""
     scraper_state["running"] = False
-    # Update shared state
+    if scraper_state.get("current_scraper"):
+        try:
+            scraper_state["current_scraper"].should_stop = True
+        except:
+            pass
     shared = get_shared_state()
     shared["running"] = False
     set_shared_state(shared)
@@ -713,124 +750,125 @@ def stop_scrape():
 @login_required
 def get_progress():
     """Get current scraping progress from shared state"""
-    # Read from shared state for multi-worker support
     shared = get_shared_state()
     return jsonify({
         "running": shared.get("running", False),
         "progress": shared.get("progress", {}),
+        "phase": shared.get("phase", "idle"),
         "last_output_file": shared.get("last_output_file"),
         "output_files": shared.get("output_files", [])
     })
 
+
+# ============================================================
+# Download & Results Routes
+# ============================================================
+
 @app.route('/api/download')
 @login_required
 def download_results():
-    """Download CSV file - either specific file or last generated"""
+    """Download a specific result file"""
     try:
-        # Check if specific file requested
         filename = request.args.get('file')
-
-        if filename:
-            # Download specific file - allow scrape_results patterns including chunked
-            if not (filename.startswith('scrape_results_') and filename.endswith('.csv')):
-                return jsonify({"error": "Invalid filename"}), 400
-
-            if not os.path.exists(filename):
-                return jsonify({"error": "File not found"}), 404
-
-            output_file = filename
-        else:
-            # Download last generated file
+        if not filename:
             output_file = scraper_state.get("last_output_file")
-
             if not output_file:
-                return jsonify({"error": "No results available to download"}), 404
+                return jsonify({"error": "No results available"}), 404
+            filename = output_file
 
-            if not os.path.exists(output_file):
-                return jsonify({"error": "Result file not found"}), 404
+        # Security: validate filename pattern
+        valid_prefixes = ('products_', 'brands_', 'results_', 'scrape_results_')
+        valid_suffixes = ('.csv', '.json', '.zip')
+        if not any(filename.startswith(p) for p in valid_prefixes):
+            return jsonify({"error": "Invalid filename"}), 400
+        if not any(filename.endswith(s) for s in valid_suffixes):
+            return jsonify({"error": "Invalid file type"}), 400
+
+        if not os.path.exists(filename):
+            return jsonify({"error": "File not found"}), 404
+
+        mimetype = 'text/csv'
+        if filename.endswith('.json'):
+            mimetype = 'application/json'
+        elif filename.endswith('.zip'):
+            mimetype = 'application/zip'
 
         return send_file(
-            output_file,
+            filename,
             as_attachment=True,
-            download_name=os.path.basename(output_file),
-            mimetype='text/csv'
+            download_name=os.path.basename(filename),
+            mimetype=mimetype
         )
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route('/api/download-all')
 @login_required
 def download_all_results():
-    """Download all chunked CSV files as a zip"""
+    """Download all result files as a zip"""
     try:
-        import zipfile
-        from io import BytesIO
-
-        output_files = scraper_state.get("output_files", [])
+        shared = get_shared_state()
+        output_files = shared.get("output_files", [])
 
         if not output_files:
-            return jsonify({"error": "No results available to download"}), 404
+            return jsonify({"error": "No results available"}), 404
 
         if len(output_files) == 1:
-            # Just return the single file
-            return send_file(
-                output_files[0],
-                as_attachment=True,
-                download_name=os.path.basename(output_files[0]),
-                mimetype='text/csv'
-            )
+            f = output_files[0]
+            if os.path.exists(f):
+                mimetype = 'application/json' if f.endswith('.json') else 'text/csv'
+                return send_file(f, as_attachment=True, download_name=os.path.basename(f), mimetype=mimetype)
 
-        # Create zip file with all chunks
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         zip_buffer = BytesIO()
 
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
             for filepath in output_files:
                 if os.path.exists(filepath):
-                    zip_file.write(filepath, os.path.basename(filepath))
+                    zf.write(filepath, os.path.basename(filepath))
 
         zip_buffer.seek(0)
 
         return send_file(
             zip_buffer,
             as_attachment=True,
-            download_name=f"scrape_results_{timestamp}.zip",
+            download_name=f"amazon_results_{timestamp}.zip",
             mimetype='application/zip'
         )
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/list-results')
 @login_required
 def list_results():
-    """List all available CSV result files"""
+    """List all available result files"""
     try:
-        csv_files = []
-        for file in os.listdir('.'):
-            if file.startswith('scrape_results_') and file.endswith('.csv'):
-                stat = os.stat(file)
-                # Count rows in file (excluding header)
-                try:
-                    with open(file, 'r', encoding='utf-8') as f:
-                        row_count = sum(1 for _ in f) - 1  # Subtract header
-                except:
-                    row_count = 0
+        result_files = []
+        valid_prefixes = ('products_', 'brands_', 'results_', 'scrape_results_')
+        valid_suffixes = ('.csv', '.json')
 
-                csv_files.append({
+        for file in os.listdir('.'):
+            is_result = any(file.startswith(p) for p in valid_prefixes) and any(file.endswith(s) for s in valid_suffixes)
+            if is_result:
+                stat = os.stat(file)
+                row_count = 0
+                if file.endswith('.csv'):
+                    try:
+                        with open(file, 'r', encoding='utf-8') as f:
+                            row_count = sum(1 for _ in f) - 1
+                    except:
+                        pass
+
+                result_files.append({
                     "filename": file,
                     "size": stat.st_size,
                     "rows": max(0, row_count),
+                    "type": "json" if file.endswith('.json') else "csv",
                     "created": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                 })
 
-        # Sort by creation time, newest first
-        csv_files.sort(key=lambda x: x['created'], reverse=True)
-
-        return jsonify({"files": csv_files})
-
+        result_files.sort(key=lambda x: x['created'], reverse=True)
+        return jsonify({"files": result_files})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -842,16 +880,18 @@ def delete_result():
         data = request.json
         filename = data.get('filename', '')
 
-        # Security: only allow deleting scrape_results_*.csv files
-        if not filename.startswith('scrape_results_') or not filename.endswith('.csv'):
+        valid_prefixes = ('products_', 'brands_', 'results_', 'scrape_results_')
+        valid_suffixes = ('.csv', '.json')
+        if not any(filename.startswith(p) for p in valid_prefixes):
             return jsonify({"error": "Invalid filename"}), 400
+        if not any(filename.endswith(s) for s in valid_suffixes):
+            return jsonify({"error": "Invalid file type"}), 400
 
         if not os.path.exists(filename):
             return jsonify({"error": "File not found"}), 404
 
         os.remove(filename)
         return jsonify({"success": True, "message": f"Deleted {filename}"})
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -861,15 +901,20 @@ def clear_results():
     """Delete all result files"""
     try:
         deleted = 0
+        valid_prefixes = ('products_', 'brands_', 'results_', 'scrape_results_')
         for file in os.listdir('.'):
-            if file.startswith('scrape_results_') and file.endswith('.csv'):
+            if any(file.startswith(p) for p in valid_prefixes) and (file.endswith('.csv') or file.endswith('.json')):
                 os.remove(file)
                 deleted += 1
 
         return jsonify({"success": True, "deleted": deleted})
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ============================================================
+# SSE Logs
+# ============================================================
 
 @app.route('/api/logs')
 @login_required
@@ -878,263 +923,309 @@ def stream_logs():
     def generate():
         last_index = 0
         while True:
-            # Read new logs from shared file
             logs = get_log_entries(last_index)
             if logs:
                 for log in logs:
                     yield f"data: {json.dumps(log)}\n\n"
                 last_index += len(logs)
             else:
-                # Send heartbeat
                 yield f"data: {json.dumps({'heartbeat': True})}\n\n"
             time.sleep(0.2)
 
     return Response(generate(), mimetype='text/event-stream')
 
-def run_scraper_async(searches, max_pages, use_proxies, concurrent=1, chunk_output=False, max_businesses=0):
+
+# ============================================================
+# Scraper Engine
+# ============================================================
+
+def run_scraper_async(searches, max_pages, detail_pages, use_proxies, concurrent,
+                      output_format, filters_config, categories):
     """Run scraper in async context"""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(run_scraper(searches, max_pages, use_proxies, concurrent, chunk_output, max_businesses))
+    loop.run_until_complete(
+        run_scraper(searches, max_pages, detail_pages, use_proxies, concurrent,
+                    output_format, filters_config, categories)
+    )
 
-async def run_single_search(search, max_pages, proxy_manager, search_num, total_searches, stagger_index=0, request_semaphore=None):
-    """Run a single search (used for parallel processing)"""
+
+async def run_single_search(search, max_pages, detail_pages, proxy_manager,
+                            search_num, total_searches, stagger_index=0):
+    """Run a single Amazon search (used for parallel processing)"""
     import random
     logger = WebLogger(scraper_state["log_queue"])
 
     try:
-        # Staggered startup: spread out worker starts to avoid burst requests
-        stagger_delay = stagger_index * 0.3 + random.uniform(0, 1.0)
+        stagger_delay = stagger_index * 0.5 + random.uniform(0, 2.0)
         await asyncio.sleep(stagger_delay)
 
-        # Create separate scraper instance for this search
-        scraper = YellowPagesScraper(
+        scraper = AmazonScraper(
             headless=True,
-            delay=3.0 + random.uniform(0, 1.0),  # Add jitter to delay
-            proxy_manager=proxy_manager
+            delay=3.0 + random.uniform(0, 2.0),
+            proxy_manager=proxy_manager,
+            max_pages=max_pages,
+            detail_pages=detail_pages,
         )
 
         await scraper.start_browser()
 
-        logger.info(f"[{search_num}/{total_searches}] {search['term']} in {search['location']} (stagger: {stagger_delay:.1f}s)")
+        logger.info(f"[{search_num}/{total_searches}] '{search['keyword']}' in {search['category_key']}")
 
-        businesses = await scraper.scrape_search(
-            search_term=search['term'],
-            location=search['location'],
-            max_pages=max_pages
+        products = await scraper.scrape_keyword(
+            category_key=search['category_key'],
+            keyword=search['keyword'],
+            max_pages=max_pages,
         )
 
-        # Tag with search info
-        for biz in businesses:
-            biz['search_category'] = search['term']
-            biz['search_location'] = search['location']
+        for p in products:
+            p['search_keyword'] = search['keyword']
+            p['category_key'] = search['category_key']
 
-        logger.success(f"✓ [{search_num}/{total_searches}] Found {len(businesses)} businesses")
+        logger.success(f"[{search_num}/{total_searches}] Found {len(products)} products")
 
         await scraper.close_browser()
 
-        return businesses
+        return products
 
     except Exception as e:
-        logger.error(f"❌ [{search_num}/{total_searches}] Error: {str(e)}")
+        logger.error(f"[{search_num}/{total_searches}] Error: {str(e)}")
         return []
 
-async def run_scraper(searches, max_pages, use_proxies, concurrent=1, chunk_output=False, max_businesses=0):
+
+async def run_scraper(searches, max_pages, detail_pages, use_proxies, concurrent,
+                      output_format, filters_config, categories):
     """Main scraping logic - supports both sequential and parallel"""
     logger = WebLogger(scraper_state["log_queue"])
-    all_businesses = []
+    all_products = []
 
     try:
-        logger.info(f"Starting scraper... (Concurrency: {concurrent})")
-        if max_businesses > 0:
-            logger.info(f"Business limit set: will stop after {max_businesses:,} businesses")
-        if chunk_output:
-            logger.info("Chunked output enabled - will split into 50k row files")
+        logger.info(f"Starting Amazon scraper... (Concurrency: {concurrent})")
+        logger.info(f"Searches: {len(searches)} | Pages/search: {max_pages} | Detail pages: {detail_pages}")
 
         # Setup proxy manager
         proxy_manager = None
         if use_proxies:
             if scraper_state["proxy_manager"] and scraper_state["proxy_manager"].proxies:
                 proxy_manager = scraper_state["proxy_manager"]
-                logger.success(f"✅ Using {len(proxy_manager.proxies)} proxies")
+                logger.success(f"Using {len(proxy_manager.proxies)} proxies")
             else:
-                logger.error("⚠️ No proxies loaded - running without proxies")
+                logger.error("No proxies loaded - running without proxies")
 
-        if concurrent == 1:
-            # Sequential mode (original behavior)
-            scraper = YellowPagesScraper(
+        if concurrent <= 1:
+            # Sequential mode
+            scraper = AmazonScraper(
                 headless=True,
                 delay=3.0,
-                proxy_manager=proxy_manager
+                proxy_manager=proxy_manager,
+                max_pages=max_pages,
+                detail_pages=detail_pages,
             )
 
             scraper_state["current_scraper"] = scraper
 
             await scraper.start_browser()
-            logger.success("✅ Browser started")
+            logger.success("Browser started")
 
-            # Run searches sequentially
             for i, search in enumerate(searches, 1):
                 if not scraper_state["running"]:
-                    logger.info("⚠️ Scraper stopped by user")
+                    logger.info("Scraper stopped by user")
                     break
 
-                logger.info(f"[{i}/{len(searches)}] {search['term']} in {search['location']}")
+                logger.info(f"[{i}/{len(searches)}] '{search['keyword']}' in {search['category_key']}")
 
-                businesses = await scraper.scrape_search(
-                    search_term=search['term'],
-                    location=search['location'],
-                    max_pages=max_pages
+                products = await scraper.scrape_keyword(
+                    category_key=search['category_key'],
+                    keyword=search['keyword'],
+                    max_pages=max_pages,
                 )
 
-                # Tag with search info
-                for biz in businesses:
-                    biz['search_category'] = search['term']
-                    biz['search_location'] = search['location']
+                for p in products:
+                    p['search_keyword'] = search['keyword']
+                    p['category_key'] = search['category_key']
 
-                all_businesses.extend(businesses)
+                all_products.extend(products)
 
                 # Update progress
                 scraper_state["progress"]["completed"] = i
-                scraper_state["progress"]["businesses_found"] = len(all_businesses)
+                scraper_state["progress"]["products_found"] = len(all_products)
+                scraper_state["progress"]["captchas_hit"] = scraper.captcha_count
 
-                logger.success(f"✓ Found {len(businesses)} businesses (Total: {len(all_businesses)})")
+                logger.success(f"Found {len(products)} products (Total: {len(all_products)})")
 
-                # Check if we've reached the business limit
-                if max_businesses > 0 and len(all_businesses) >= max_businesses:
-                    logger.success(f"🎯 Reached business limit ({max_businesses:,}) - stopping scraper")
-                    all_businesses = all_businesses[:max_businesses]  # Trim to exact limit
-                    scraper_state["progress"]["limit_reached"] = True
-                    break
+                # Sync shared state
+                shared = get_shared_state()
+                shared["progress"] = scraper_state["progress"].copy()
+                set_shared_state(shared)
 
             await scraper.close_browser()
 
         else:
             # Parallel mode
-            logger.success(f"✅ Running {concurrent} searches in parallel")
+            logger.success(f"Running {concurrent} searches in parallel")
 
-            import asyncio
+            max_concurrent = min(10, concurrent)
+            logger.info(f"Rate limiting: max {max_concurrent} concurrent (staggered startup)")
 
-            # Limit concurrent requests to avoid rate limiting
-            max_concurrent_requests = min(20, concurrent)  # Cap at 20 simultaneous requests
-            request_semaphore = asyncio.Semaphore(max_concurrent_requests)
-            logger.info(f"Rate limiting: max {max_concurrent_requests} concurrent requests (staggered startup)")
-
-            # Process searches in batches
             for batch_num, i in enumerate(range(0, len(searches), concurrent), 1):
-                # Check both local and shared state for stop signal
                 shared = get_shared_state()
                 if not scraper_state["running"] or not shared.get("running", True):
                     scraper_state["running"] = False
-                    logger.info("⚠️ Scraper stopped by user")
+                    logger.info("Scraper stopped by user")
                     break
 
                 batch = searches[i:i + concurrent]
-                batch_size = len(batch)
 
-                logger.info(f"📦 Batch {batch_num}: Processing {batch_size} searches in parallel (staggered)...")
+                logger.info(f"Batch {batch_num}: Processing {len(batch)} searches in parallel...")
 
-                # Create tasks for parallel execution with staggered starts
                 tasks = [
                     run_single_search(
                         search=search,
                         max_pages=max_pages,
+                        detail_pages=detail_pages,
                         proxy_manager=proxy_manager,
                         search_num=i + j + 1,
                         total_searches=len(searches),
                         stagger_index=j,
-                        request_semaphore=request_semaphore
                     )
                     for j, search in enumerate(batch)
                 ]
 
-                # Run all searches in this batch concurrently (with staggered starts)
                 batch_results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                # Collect results
                 for result in batch_results:
                     if isinstance(result, list):
-                        all_businesses.extend(result)
-                        # Check limit after each result to stop early if possible
-                        if max_businesses > 0 and len(all_businesses) >= max_businesses:
-                            break
+                        all_products.extend(result)
 
-                # Update progress
                 scraper_state["progress"]["completed"] = min(i + concurrent, len(searches))
-                scraper_state["progress"]["businesses_found"] = len(all_businesses)
+                scraper_state["progress"]["products_found"] = len(all_products)
 
-                # Update shared state for multi-worker support
                 shared = get_shared_state()
                 shared["progress"] = scraper_state["progress"].copy()
                 set_shared_state(shared)
 
-                logger.success(f"✓ Batch {batch_num} complete! Total businesses: {len(all_businesses)}")
+                logger.success(f"Batch {batch_num} complete! Total products: {len(all_products)}")
 
-                # Check if we've reached the business limit
-                if max_businesses > 0 and len(all_businesses) >= max_businesses:
-                    logger.success(f"🎯 Reached business limit ({max_businesses:,}) - stopping scraper")
-                    all_businesses = all_businesses[:max_businesses]  # Trim to exact limit
-                    scraper_state["progress"]["limit_reached"] = True
-                    # Update shared state
-                    shared = get_shared_state()
-                    shared["progress"] = scraper_state["progress"].copy()
-                    set_shared_state(shared)
-                    break
-
-        # Update final count after potential trimming
-        scraper_state["progress"]["businesses_found"] = len(all_businesses)
-
-        # Save results
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        base_filename = f"scrape_results_{timestamp}.csv"
-
-        if chunk_output and len(all_businesses) > 0:
-            # Save as chunked files
-            output_files = save_chunked_csv(all_businesses, base_filename, chunk_size=50000)
-            scraper_state["output_files"] = output_files
-            scraper_state["last_output_file"] = output_files[0] if output_files else None
-
-            if len(output_files) > 1:
-                logger.success(f"COMPLETE! Saved {len(all_businesses)} businesses to {len(output_files)} files")
-                for f in output_files:
-                    logger.info(f"  - {f}")
-            else:
-                logger.success(f"COMPLETE! Saved {len(all_businesses)} businesses to {base_filename}")
-        else:
-            # Save as single file
-            from yellowpages_scraper import YellowPagesScraper
-            temp_scraper = YellowPagesScraper()
-            temp_scraper.save_to_csv(all_businesses, base_filename)
-            scraper_state["last_output_file"] = base_filename
-            scraper_state["output_files"] = [base_filename]
-            logger.success(f"COMPLETE! Saved {len(all_businesses)} businesses to {base_filename}")
-
-        # Update shared state with output files
+        # ---- Phase 3: Post-Processing ----
+        scraper_state["phase"] = "processing"
         shared = get_shared_state()
-        shared["output_files"] = scraper_state["output_files"]
-        shared["last_output_file"] = scraper_state["last_output_file"]
+        shared["phase"] = "processing"
+        shared["progress"] = scraper_state["progress"].copy()
         set_shared_state(shared)
 
-        logger.success(f"Click 'Download Results' to save to your computer")
+        logger.info(f"Post-processing {len(all_products)} products...")
+
+        # Apply filters
+        product_filter = ProductFilter(filters_config)
+        if product_filter.is_active():
+            before_count = len(all_products)
+            all_products = product_filter.apply(all_products)
+            logger.info(f"Filters applied: {before_count} -> {len(all_products)} products")
+
+        # Calculate BSR-based sales estimates
+        primary_category = categories[0] if categories else "default"
+        for p in all_products:
+            bsr = p.get("bsr", 0)
+            price = p.get("price", 0)
+            cat = p.get("category_key", primary_category)
+            if isinstance(bsr, int) and bsr > 0:
+                p["estimated_monthly_units"] = estimate_monthly_sales(bsr, cat)
+                p["estimated_monthly_revenue"] = estimate_monthly_revenue(bsr, cat, price)
+
+        # Aggregate by brand
+        aggregator = BrandAggregator(category_key=primary_category)
+        aggregator.add_products(all_products)
+        brand_stats = aggregator.get_brand_stats()
+
+        scraper_state["progress"]["brands_found"] = len(brand_stats)
+        shared = get_shared_state()
+        shared["progress"] = scraper_state["progress"].copy()
+        set_shared_state(shared)
+
+        logger.info(f"Aggregated into {len(brand_stats)} brands")
+
+        # Generate output files
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_files = []
+
+        if output_format in ("csv", "both"):
+            # Products CSV
+            products_file = f"products_{timestamp}.csv"
+            if all_products:
+                fieldnames = [
+                    "asin", "title", "brand", "price", "rating", "review_count",
+                    "bsr", "is_prime", "is_fba", "product_type", "seller",
+                    "estimated_monthly_units", "estimated_monthly_revenue",
+                    "date_first_available", "variations", "category_breadcrumb",
+                    "category_key", "search_keyword", "url", "image_url", "scraped_at",
+                ]
+                with open(products_file, 'w', newline='', encoding='utf-8') as f:
+                    writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
+                    writer.writeheader()
+                    for p in all_products:
+                        row = {k: v for k, v in p.items() if k != 'bullet_points'}
+                        writer.writerow(row)
+                output_files.append(products_file)
+                logger.success(f"Saved {len(all_products)} products to {products_file}")
+
+            # Brands CSV
+            brands_file = f"brands_{timestamp}.csv"
+            aggregator.save_brands_csv(brands_file)
+            output_files.append(brands_file)
+            logger.success(f"Saved {len(brand_stats)} brands to {brands_file}")
+
+        if output_format in ("json", "both"):
+            # Full JSON with nested brands/products
+            json_file = f"results_{timestamp}.json"
+            output_data = {
+                "metadata": {
+                    "scraped_at": datetime.now().isoformat(),
+                    "total_products": len(all_products),
+                    "total_brands": len(brand_stats),
+                    "categories": categories,
+                    "filters": filters_config,
+                },
+                "brands": aggregator.to_nested_json(),
+            }
+            with open(json_file, 'w', encoding='utf-8') as f:
+                json.dump(output_data, f, indent=2, default=str)
+            output_files.append(json_file)
+            logger.success(f"Saved results to {json_file}")
+
+        # Update state with output files
+        scraper_state["output_files"] = output_files
+        scraper_state["last_output_file"] = output_files[0] if output_files else None
+
+        shared = get_shared_state()
+        shared["output_files"] = output_files
+        shared["last_output_file"] = scraper_state["last_output_file"]
+        shared["phase"] = "complete"
+        set_shared_state(shared)
+
+        logger.success(f"COMPLETE! {len(all_products)} products, {len(brand_stats)} brands")
+        logger.success("Click 'Download Results' to save files")
 
     except Exception as e:
-        logger.error(f"❌ Error: {str(e)}")
+        logger.error(f"Error: {str(e)}")
         import traceback
         traceback.print_exc()
 
     finally:
-        if concurrent == 1 and scraper_state.get("current_scraper"):
-            await scraper_state["current_scraper"].close_browser()
+        if concurrent <= 1 and scraper_state.get("current_scraper"):
+            try:
+                await scraper_state["current_scraper"].close_browser()
+            except:
+                pass
         scraper_state["running"] = False
-        # Update shared state
+        scraper_state["phase"] = "idle"
         shared = get_shared_state()
         shared["running"] = False
         set_shared_state(shared)
 
+
 if __name__ == '__main__':
     import socket
 
-    # Get local IP address
     hostname = socket.gethostname()
     try:
         local_ip = socket.gethostbyname(hostname)
@@ -1142,10 +1233,10 @@ if __name__ == '__main__':
         local_ip = "your-vm-ip"
 
     print("=" * 60)
-    print("Yellow Pages Scraper Web UI")
+    print("Amazon Brand Scraper Web UI")
     print("=" * 60)
-    print(f"\nServer running on: http://0.0.0.0:5001")
-    print(f"Access via: http://{local_ip}:5001")
+    print(f"\nServer running on: http://0.0.0.0:5002")
+    print(f"Access via: http://{local_ip}:5002")
     print("=" * 60)
 
-    app.run(host='0.0.0.0', debug=True, port=5001, threaded=True)
+    app.run(host='0.0.0.0', debug=True, port=5002, threaded=True)

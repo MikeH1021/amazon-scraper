@@ -1,5 +1,5 @@
 """
-Parallel Yellow Pages Scraper with Worker Pool
+Parallel Amazon Scraper with Worker Pool
 High-performance scraping with browser pooling, proxy rotation, and retry logic
 """
 
@@ -7,11 +7,11 @@ import asyncio
 import logging
 import random
 from typing import List, Dict, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from playwright.async_api import async_playwright, Browser, BrowserContext
 from proxy_manager import ProxyManager, Proxy
-from yellowpages_scraper import YellowPagesScraper
+from amazon_scraper import AmazonScraper
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +19,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ScrapeTask:
     """A single scrape task"""
-    search_term: str
-    location: str
-    max_pages: int = 5
+    category_key: str
+    keyword: str
+    max_pages: int = 3
+    detail_pages: bool = True
     task_id: int = 0
 
 
@@ -29,10 +30,11 @@ class ScrapeTask:
 class ScrapeResult:
     """Result of a scrape task"""
     task: ScrapeTask
-    businesses: List[Dict]
-    success: bool
+    products: List[Dict] = field(default_factory=list)
+    success: bool = False
     error: Optional[str] = None
     retries: int = 0
+    captchas_hit: int = 0
 
 
 class BrowserPool:
@@ -58,7 +60,13 @@ class BrowserPool:
         for i in range(self.size):
             browser = await self.playwright.chromium.launch(
                 headless=self.headless,
-                args=['--disable-blink-features=AutomationControlled']
+                args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--disable-features=IsolateOrigins,site-per-process',
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                ]
             )
             self.browsers.append(browser)
             await self.available.put(browser)
@@ -92,27 +100,29 @@ class BrowserPool:
 
 class ParallelScraper:
     """
-    High-performance parallel scraper with worker pool pattern
+    High-performance parallel Amazon scraper with worker pool pattern
 
     Features:
     - Browser pooling (reuse browser instances)
     - Per-worker proxy assignment
     - Retry with exponential backoff
     - Progress tracking
-    - Graceful error handling
+    - CAPTCHA detection and handling
+    - Detail page semaphore for rate limiting
     """
 
     def __init__(
         self,
         workers: int = 5,
         headless: bool = True,
-        delay: float = 2.0,
+        delay: float = 3.0,
         proxy_manager: Optional[ProxyManager] = None,
         max_retries: int = 3,
-        retry_delay: float = 5.0,
-        stagger_delay: float = 0.5,
-        jitter: float = 0.5,
-        max_concurrent_requests: int = 20
+        retry_delay: float = 10.0,
+        stagger_delay: float = 2.0,
+        jitter: float = 1.0,
+        max_concurrent_requests: int = 10,
+        detail_page_concurrency: int = 3
     ):
         self.workers = workers
         self.headless = headless
@@ -120,9 +130,10 @@ class ParallelScraper:
         self.proxy_manager = proxy_manager
         self.max_retries = max_retries
         self.retry_delay = retry_delay
-        self.stagger_delay = stagger_delay  # Max random delay before worker starts
-        self.jitter = jitter  # Random jitter added to delays (0-jitter seconds)
+        self.stagger_delay = stagger_delay
+        self.jitter = jitter
         self.max_concurrent_requests = max_concurrent_requests
+        self.detail_page_concurrency = detail_page_concurrency
 
         self.browser_pool: Optional[BrowserPool] = None
         self.task_queue: asyncio.Queue = asyncio.Queue()
@@ -131,15 +142,23 @@ class ParallelScraper:
 
         # Global semaphore to limit concurrent requests
         self.request_semaphore: Optional[asyncio.Semaphore] = None
+        # Detail page semaphore (stricter limit)
+        self.detail_semaphore: Optional[asyncio.Semaphore] = None
 
         # Progress tracking
         self.total_tasks = 0
         self.completed_tasks = 0
         self.failed_tasks = 0
+        self.total_products = 0
+        self.total_captchas = 0
+        self.current_phase = "initializing"
         self.progress_lock = asyncio.Lock()
 
         # Worker proxy assignment
         self.worker_proxies: Dict[int, Proxy] = {}
+
+        # Stop signal
+        self.should_stop = False
 
     def _assign_proxies_to_workers(self):
         """Assign dedicated proxies to each worker for better distribution"""
@@ -159,22 +178,20 @@ class ParallelScraper:
         """Worker that processes tasks from the queue"""
         proxy = self.worker_proxies.get(worker_id)
 
-        # Staggered startup: random delay before worker begins processing
-        startup_delay = random.uniform(0, self.stagger_delay * self.workers / 10)
+        # Staggered startup
+        startup_delay = random.uniform(0, self.stagger_delay * min(self.workers, 5) / 5)
         await asyncio.sleep(startup_delay)
 
         if proxy:
-            logger.info(f"Worker {worker_id} starting with proxy {proxy.host}:{proxy.port} (delayed {startup_delay:.1f}s)")
+            logger.info(f"Worker {worker_id} starting with proxy {proxy.host}:{proxy.port}")
         else:
-            logger.info(f"Worker {worker_id} starting without proxy (delayed {startup_delay:.1f}s)")
+            logger.info(f"Worker {worker_id} starting without proxy")
 
-        while True:
+        while not self.should_stop:
             try:
-                # Get task from queue (with timeout to allow graceful shutdown)
                 try:
-                    task = await asyncio.wait_for(self.task_queue.get(), timeout=1.0)
+                    task = await asyncio.wait_for(self.task_queue.get(), timeout=2.0)
                 except asyncio.TimeoutError:
-                    # Check if all tasks are done
                     if self.task_queue.empty():
                         break
                     continue
@@ -191,13 +208,15 @@ class ParallelScraper:
                     self.completed_tasks += 1
                     if not result.success:
                         self.failed_tasks += 1
+                    self.total_products += len(result.products)
+                    self.total_captchas += result.captchas_hit
 
                     progress = (self.completed_tasks / self.total_tasks) * 100
                     status = "OK" if result.success else "FAIL"
                     logger.info(
                         f"[{self.completed_tasks}/{self.total_tasks}] ({progress:.1f}%) "
-                        f"Worker {worker_id}: {task.search_term} in {task.location} - "
-                        f"{status} ({len(result.businesses)} businesses)"
+                        f"Worker {worker_id}: {task.keyword} - "
+                        f"{status} ({len(result.products)} products)"
                     )
 
                 self.task_queue.task_done()
@@ -214,39 +233,43 @@ class ParallelScraper:
         """Process a task with exponential backoff retry"""
 
         last_error = None
+        captchas = 0
 
         for attempt in range(self.max_retries + 1):
+            if self.should_stop:
+                return ScrapeResult(task=task, products=[], success=False, error="Stopped by user")
+
             try:
-                # Acquire browser from pool
                 browser = await self.browser_pool.acquire()
 
                 try:
-                    businesses = await self._scrape_with_browser(browser, task, proxy)
+                    products, task_captchas = await self._scrape_with_browser(
+                        browser, task, proxy
+                    )
+                    captchas += task_captchas
 
-                    # Record success if using proxy
                     if proxy:
                         proxy.record_success()
 
                     return ScrapeResult(
                         task=task,
-                        businesses=businesses,
+                        products=products,
                         success=True,
-                        retries=attempt
+                        retries=attempt,
+                        captchas_hit=captchas
                     )
 
                 finally:
-                    # Always release browser back to pool
                     await self.browser_pool.release(browser)
 
             except Exception as e:
                 last_error = str(e)
+                captchas += 1 if "captcha" in last_error.lower() else 0
 
-                # Record failure if using proxy
                 if proxy:
-                    is_block = "429" in last_error or "403" in last_error
+                    is_block = "429" in last_error or "403" in last_error or "captcha" in last_error.lower()
                     proxy.record_failure(is_block=is_block)
 
-                    # If blocked, try to get a different proxy
                     if is_block and self.proxy_manager:
                         new_proxy = self.proxy_manager.get_next_proxy()
                         if new_proxy and new_proxy != proxy:
@@ -255,20 +278,20 @@ class ParallelScraper:
                             logger.info(f"Worker {worker_id} switched to proxy {proxy.host}")
 
                 if attempt < self.max_retries:
-                    # Exponential backoff
                     wait_time = self.retry_delay * (2 ** attempt)
                     logger.warning(
                         f"Worker {worker_id}: Attempt {attempt + 1} failed for "
-                        f"'{task.search_term}' - retrying in {wait_time}s"
+                        f"'{task.keyword}' - retrying in {wait_time}s"
                     )
                     await asyncio.sleep(wait_time)
 
         return ScrapeResult(
             task=task,
-            businesses=[],
+            products=[],
             success=False,
             error=last_error,
-            retries=self.max_retries
+            retries=self.max_retries,
+            captchas_hit=captchas
         )
 
     async def _scrape_with_browser(
@@ -276,88 +299,71 @@ class ParallelScraper:
         browser: Browser,
         task: ScrapeTask,
         proxy: Optional[Proxy]
-    ) -> List[Dict]:
-        """Scrape using a browser from the pool"""
+    ) -> Tuple[List[Dict], int]:
+        """Scrape using a browser from the pool. Returns (products, captcha_count)."""
 
-        # Create scraper instance (shares browser)
-        scraper = YellowPagesScraper(
+        scraper = AmazonScraper(
             headless=self.headless,
-            delay=self.delay
+            delay=self.delay,
+            max_pages=task.max_pages,
+            detail_pages=task.detail_pages,
         )
 
         # Use the pooled browser
         scraper.browser = browser
 
-        # Create context with proxy if available
-        context_options = {
-            'user_agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-        }
+        if proxy and self.proxy_manager:
+            scraper.proxy_manager = self.proxy_manager
 
-        if proxy:
-            context_options['proxy'] = proxy.to_playwright_dict()
+        # Use semaphore for search pages
+        async with self.request_semaphore:
+            products = await scraper.scrape_search(
+                category_key=task.category_key,
+                keyword=task.keyword,
+                max_pages=task.max_pages,
+            )
 
-        context = await browser.new_context(**context_options)
-        page = await context.new_page()
+        # Use detail semaphore for detail pages (stricter limit)
+        if task.detail_pages and products:
+            async with self.detail_semaphore:
+                products = await scraper.scrape_detail_pages(
+                    products, task.category_key
+                )
 
-        businesses = []
-
-        try:
-            for page_num in range(1, task.max_pages + 1):
-                url = scraper._build_url(task.search_term, task.location, page_num)
-
-                # Use semaphore to limit concurrent requests globally
-                async with self.request_semaphore:
-                    response = await page.goto(url, wait_until='networkidle', timeout=30000)
-
-                    # Check for rate limiting
-                    if response:
-                        status = response.status
-                        if status == 429:
-                            raise Exception(f"Rate limited (429) on page {page_num}")
-                        elif status == 403:
-                            raise Exception(f"Forbidden (403) on page {page_num}")
-
-                # Add jitter to delay to prevent synchronized requests
-                jittered_delay = self.delay + random.uniform(0, self.jitter)
-                await asyncio.sleep(jittered_delay)
-
-                page_businesses = await scraper._extract_businesses(page)
-
-                if not page_businesses:
-                    break
-
-                businesses.extend(page_businesses)
-
-        finally:
-            await context.close()
-
-        return businesses
+        captchas = scraper.captcha_count
+        return products, captchas
 
     async def scrape_all(
         self,
         tasks: List[Dict],
-        max_pages: int = 5
+        max_pages: int = 3,
+        detail_pages: bool = True
     ) -> Tuple[List[Dict], Dict]:
         """
         Scrape all tasks in parallel
 
         Args:
-            tasks: List of {"term": str, "location": str} dicts
+            tasks: List of {"category_key": str, "keyword": str} dicts
             max_pages: Max pages per search
+            detail_pages: Whether to scrape detail pages
 
         Returns:
-            Tuple of (all_businesses, stats_dict)
+            Tuple of (all_products, stats_dict)
         """
         start_time = datetime.now()
+        self.should_stop = False
+        self.current_phase = "search"
 
         # Initialize browser pool
         pool_size = min(self.workers, len(tasks))
         self.browser_pool = BrowserPool(pool_size, self.headless)
         await self.browser_pool.initialize()
 
-        # Initialize global request semaphore to limit concurrent requests
+        # Initialize semaphores
         self.request_semaphore = asyncio.Semaphore(self.max_concurrent_requests)
-        logger.info(f"Rate limiting: max {self.max_concurrent_requests} concurrent requests")
+        self.detail_semaphore = asyncio.Semaphore(self.detail_page_concurrency)
+        logger.info(f"Rate limiting: max {self.max_concurrent_requests} concurrent, "
+                    f"{self.detail_page_concurrency} detail page concurrent")
 
         # Assign proxies to workers
         self._assign_proxies_to_workers()
@@ -366,23 +372,26 @@ class ParallelScraper:
         self.total_tasks = len(tasks)
         self.completed_tasks = 0
         self.failed_tasks = 0
+        self.total_products = 0
+        self.total_captchas = 0
         self.results = []
 
         for i, task_dict in enumerate(tasks):
             scrape_task = ScrapeTask(
-                search_term=task_dict['term'],
-                location=task_dict['location'],
+                category_key=task_dict.get('category_key', 'health'),
+                keyword=task_dict['keyword'],
                 max_pages=max_pages,
+                detail_pages=detail_pages,
                 task_id=i
             )
             await self.task_queue.put(scrape_task)
 
-        logger.info(f"Starting {self.workers} workers to process {len(tasks)} tasks...")
+        logger.info(f"Starting {pool_size} workers to process {len(tasks)} tasks...")
 
         # Start workers
         workers = [
             asyncio.create_task(self._worker(i))
-            for i in range(min(self.workers, len(tasks)))
+            for i in range(pool_size)
         ]
 
         # Wait for all tasks to complete
@@ -398,11 +407,12 @@ class ParallelScraper:
         await self.browser_pool.close()
 
         # Collect results
-        all_businesses = []
+        all_products = []
         for result in self.results:
-            for business in result.businesses:
-                business['search_category'] = result.task.search_term
-            all_businesses.extend(result.businesses)
+            for product in result.products:
+                product['search_keyword'] = result.task.keyword
+                product['category_key'] = result.task.category_key
+            all_products.extend(result.products)
 
         # Calculate stats
         end_time = datetime.now()
@@ -413,10 +423,11 @@ class ParallelScraper:
             'completed_tasks': self.completed_tasks,
             'failed_tasks': self.failed_tasks,
             'success_rate': ((self.completed_tasks - self.failed_tasks) / self.total_tasks * 100) if self.total_tasks > 0 else 0,
-            'total_businesses': len(all_businesses),
+            'total_products': len(all_products),
+            'total_captchas': self.total_captchas,
             'duration_seconds': duration,
             'tasks_per_minute': (self.total_tasks / duration * 60) if duration > 0 else 0,
-            'workers_used': min(self.workers, len(tasks))
+            'workers_used': pool_size
         }
 
         # Log proxy health if using proxies
@@ -426,40 +437,48 @@ class ParallelScraper:
             logger.info(f"Proxy health: {health['available_proxies']}/{health['total_proxies']} available, "
                        f"{health['success_rate']*100:.1f}% success rate")
 
-        return all_businesses, stats
+        return all_products, stats
+
+    def stop(self):
+        """Signal all workers to stop."""
+        self.should_stop = True
 
 
 async def run_parallel_scrape(
     searches: List[Dict],
     workers: int = 5,
-    max_pages: int = 5,
+    max_pages: int = 3,
+    detail_pages: bool = True,
     headless: bool = True,
-    delay: float = 2.0,
+    delay: float = 3.0,
     proxy_manager: Optional[ProxyManager] = None,
     max_retries: int = 3,
-    retry_delay: float = 5.0,
-    stagger_delay: float = 0.5,
-    jitter: float = 0.5,
-    max_concurrent_requests: int = 20
+    retry_delay: float = 10.0,
+    stagger_delay: float = 2.0,
+    jitter: float = 1.0,
+    max_concurrent_requests: int = 10,
+    detail_page_concurrency: int = 3
 ) -> Tuple[List[Dict], Dict]:
     """
-    Convenience function to run parallel scraping
+    Convenience function to run parallel Amazon scraping
 
     Args:
-        searches: List of {"term": str, "location": str} dicts
+        searches: List of {"category_key": str, "keyword": str} dicts
         workers: Number of parallel workers
         max_pages: Max pages per search
+        detail_pages: Whether to scrape detail pages
         headless: Run browsers in headless mode
         delay: Delay between page loads
         proxy_manager: Optional ProxyManager for IP rotation
         max_retries: Number of retries for failed requests
         retry_delay: Base delay for exponential backoff
         stagger_delay: Max random delay factor before workers start
-        jitter: Random jitter (0 to jitter seconds) added to delays
+        jitter: Random jitter added to delays
         max_concurrent_requests: Max simultaneous requests across all workers
+        detail_page_concurrency: Max concurrent detail page requests
 
     Returns:
-        Tuple of (all_businesses, stats_dict)
+        Tuple of (all_products, stats_dict)
     """
     scraper = ParallelScraper(
         workers=workers,
@@ -470,7 +489,8 @@ async def run_parallel_scrape(
         retry_delay=retry_delay,
         stagger_delay=stagger_delay,
         jitter=jitter,
-        max_concurrent_requests=max_concurrent_requests
+        max_concurrent_requests=max_concurrent_requests,
+        detail_page_concurrency=detail_page_concurrency
     )
 
-    return await scraper.scrape_all(searches, max_pages)
+    return await scraper.scrape_all(searches, max_pages, detail_pages)
