@@ -324,6 +324,93 @@
             .header-user { margin-left: 0; padding-left: 0; border-left: none; width: 100%; justify-content: center; }
             .filter-row { grid-template-columns: 1fr; }
         }
+
+        /* AI Suggest Button */
+        .btn-ai-suggest {
+            margin-left: auto;
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 18px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none; border-radius: 12px;
+            color: white; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        .btn-ai-suggest:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5); }
+        .btn-ai-suggest:hover svg { transform: rotate(10deg) scale(1.1); }
+
+        /* AI Modal */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px);
+            z-index: 1000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal {
+            background: var(--dark-card); border: 1px solid var(--glass-border);
+            border-radius: 24px; width: 90%; max-width: 560px; max-height: 90vh;
+            overflow: hidden; transform: scale(0.9) translateY(20px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-overlay.active .modal { transform: scale(1) translateY(0); }
+        .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 24px 28px; border-bottom: 1px solid var(--glass-border);
+        }
+        .modal-title { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 700; color: var(--white); }
+        .modal-title svg { color: var(--success); }
+        .modal-close {
+            width: 40px; height: 40px; border: none; border-radius: 10px;
+            background: var(--dark-elevated); color: var(--gray-400);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .modal-close:hover { background: rgba(248, 113, 113, 0.15); color: var(--danger); }
+        .modal-body { padding: 28px; overflow-y: auto; max-height: calc(90vh - 180px); }
+        .modal-body textarea {
+            width: 100%; padding: 16px 18px; background: var(--dark-elevated);
+            border: 2px solid var(--glass-border); border-radius: 14px;
+            color: var(--white); font-size: 14px; font-family: inherit;
+            resize: vertical; min-height: 120px; transition: all 0.3s ease;
+        }
+        .modal-body textarea::placeholder { color: var(--gray-500); }
+        .modal-body textarea:focus { outline: none; border-color: var(--success); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2); }
+        .modal-body .form-group small { display: block; margin-top: 10px; font-size: 12px; color: var(--gray-500); }
+        .modal-footer {
+            display: flex; gap: 12px; padding: 20px 28px;
+            border-top: 1px solid var(--glass-border); background: var(--dark-elevated);
+        }
+        .modal-footer .btn {
+            flex: 1; padding: 14px 24px; border: none; border-radius: 12px;
+            font-size: 14px; font-weight: 700; cursor: pointer;
+            transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .modal-footer .btn-secondary { background: var(--dark-card); color: var(--gray-300); border: 1px solid var(--glass-border); }
+        .modal-footer .btn-secondary:hover { border-color: var(--gray-500); }
+        .modal-footer .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; box-shadow: 0 4px 20px var(--primary-glow); }
+        .modal-footer .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px var(--primary-glow); }
+        .modal-footer .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .modal-footer .btn-primary.loading { position: relative; color: transparent; }
+        .modal-footer .btn-primary.loading svg { visibility: hidden; }
+        .modal-footer .btn-primary.loading::after {
+            content: ''; position: absolute; width: 20px; height: 20px;
+            border: 2px solid transparent; border-top-color: white;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        .modal-footer .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4); }
+        .modal-footer .btn-success:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(16, 185, 129, 0.5); }
+        .ai-error { margin-top: 20px; padding: 16px 20px; background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 12px; color: #fca5a5; font-size: 14px; display: none; }
+        .ai-results { margin-top: 20px; padding: 20px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 14px; }
+        .ai-results-section { margin-bottom: 16px; }
+        .ai-results-section:last-child { margin-bottom: 0; }
+        .ai-results-section h4 { color: var(--success); font-size: 13px; font-weight: 600; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .ai-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .ai-tag { padding: 6px 12px; background: var(--dark-elevated); border: 1px solid var(--glass-border); border-radius: 8px; font-size: 13px; color: var(--gray-300); }
+
+        /* Clear All button */
+        .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4); }
     </style>
 </head>
 <body>
@@ -399,6 +486,14 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     </div>
                     <h2>Search Configuration<small>Category, keywords, and search settings</small></h2>
+                    <button class="btn-ai-suggest" onclick="openAiModal()" title="Get AI-powered keyword suggestions">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                        AI Suggest
+                    </button>
                 </div>
 
                 <div class="form-group">
@@ -619,6 +714,10 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         Preview
                     </button>
+                    <button class="btn btn-danger" onclick="clearAllResults()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        Clear All
+                    </button>
                 </div>
             </div>
             <div class="results-table-container" id="resultsTableContainer" style="display:none">
@@ -639,6 +738,69 @@
                 </table>
             </div>
             <div class="files-list" id="filesList"></div>
+        </div>
+
+        <!-- AI Suggestion Modal -->
+        <div class="modal-overlay" id="ai-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
+                        AI Keyword Suggestions
+                    </div>
+                    <button class="modal-close" onclick="closeAiModal()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            Product Research Goal
+                        </label>
+                        <textarea id="icp-input" placeholder="Describe what you're researching on Amazon...&#10;&#10;Example: I'm looking for supplement niches with moderate competition. Interested in health and wellness products like adaptogens, vitamins, and gut health supplements. Looking for products with BSR between 1,000-50,000 that have room for new private label brands."></textarea>
+                        <small>Describe your product research goal, target niche, or brand analysis needs. The AI will suggest relevant Amazon search keywords and categories.</small>
+                    </div>
+                    <div id="ai-error" class="ai-error" style="display: none;"></div>
+                    <div id="ai-results" class="ai-results" style="display: none;">
+                        <div class="ai-results-section">
+                            <h4>Suggested Keywords</h4>
+                            <div id="ai-keywords" class="ai-tags"></div>
+                        </div>
+                        <div class="ai-results-section">
+                            <h4>Suggested Categories</h4>
+                            <div id="ai-categories" class="ai-tags"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeAiModal()">Cancel</button>
+                    <button class="btn btn-primary" id="ai-generate-btn" onclick="generateAiSuggestions()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        Generate Suggestions
+                    </button>
+                    <button class="btn btn-success" id="ai-apply-btn" onclick="applyAiSuggestions()" style="display: none;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Apply to Form
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1150,6 +1312,130 @@
         window.addEventListener('resize', initStarfield);
         initStarfield();
         animateStarfield();
+
+        // ============================================================
+        // AI Suggestion Modal
+        // ============================================================
+        let aiSuggestions = { keywords: [], categories: [] };
+
+        function openAiModal() {
+            document.getElementById('ai-modal').classList.add('active');
+            document.getElementById('icp-input').focus();
+            document.getElementById('ai-results').style.display = 'none';
+            document.getElementById('ai-error').style.display = 'none';
+            document.getElementById('ai-generate-btn').style.display = 'flex';
+            document.getElementById('ai-apply-btn').style.display = 'none';
+        }
+
+        function closeAiModal() {
+            document.getElementById('ai-modal').classList.remove('active');
+        }
+
+        async function generateAiSuggestions() {
+            const icp = document.getElementById('icp-input').value.trim();
+            if (!icp) {
+                showAiError('Please describe your product research goal first.');
+                return;
+            }
+
+            const btn = document.getElementById('ai-generate-btn');
+            btn.classList.add('loading');
+            btn.disabled = true;
+            document.getElementById('ai-error').style.display = 'none';
+            document.getElementById('ai-results').style.display = 'none';
+
+            try {
+                const response = await fetch('/api/ai-suggestions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ icp })
+                });
+
+                const data = await response.json();
+                if (data.error) { showAiError(data.error); return; }
+
+                aiSuggestions = { keywords: data.keywords || [], categories: data.categories || [] };
+
+                document.getElementById('ai-keywords').innerHTML = aiSuggestions.keywords.map(k =>
+                    `<span class="ai-tag">${escapeHtml(k)}</span>`
+                ).join('');
+
+                document.getElementById('ai-categories').innerHTML = aiSuggestions.categories.map(c =>
+                    `<span class="ai-tag">${escapeHtml(c)}</span>`
+                ).join('');
+
+                document.getElementById('ai-results').style.display = 'block';
+                document.getElementById('ai-generate-btn').style.display = 'none';
+                document.getElementById('ai-apply-btn').style.display = 'flex';
+            } catch (error) {
+                showAiError('Failed to connect to AI service: ' + error.message);
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        function showAiError(message) {
+            const errorDiv = document.getElementById('ai-error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function applyAiSuggestions() {
+            const keywordsField = document.getElementById('keywords');
+            if (keywordsField && aiSuggestions.keywords.length > 0) {
+                keywordsField.value = aiSuggestions.keywords.join('\n');
+            }
+
+            // Select matching categories
+            if (aiSuggestions.categories.length > 0) {
+                const catSelect = document.getElementById('categorySelect');
+                const options = catSelect.options;
+                for (let i = 0; i < options.length; i++) {
+                    const val = options[i].value.toLowerCase();
+                    options[i].selected = aiSuggestions.categories.some(c =>
+                        c.toLowerCase() === val || options[i].text.toLowerCase().includes(c.toLowerCase())
+                    );
+                }
+            }
+
+            closeAiModal();
+            showNotification('success', `Applied ${aiSuggestions.keywords.length} keywords and ${aiSuggestions.categories.length} categories`);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeAiModal();
+        });
+
+        document.getElementById('ai-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeAiModal();
+        });
+
+        // ============================================================
+        // Clear All Results
+        // ============================================================
+        async function clearAllResults() {
+            if (!confirm('Delete all result files and clear the results table?')) return;
+
+            const filesList = document.getElementById('filesList');
+            const links = filesList.querySelectorAll('a[href*="download"]');
+            for (const link of links) {
+                const url = new URL(link.href, window.location.origin);
+                const filename = url.searchParams.get('file');
+                if (filename) {
+                    try {
+                        await fetch('/api/delete-file?file=' + encodeURIComponent(filename), { method: 'DELETE' });
+                    } catch(e) {}
+                }
+            }
+
+            document.getElementById('resultsBody').innerHTML = '';
+            document.getElementById('resultsTableContainer').style.display = 'none';
+            filesList.innerHTML = '';
+            document.getElementById('resultsPanel').style.display = 'none';
+            brandResults = [];
+            showNotification('success', 'All results cleared');
+        }
     </script>
 </body>
 </html>

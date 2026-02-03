@@ -471,6 +471,108 @@ def save_settings():
     return redirect(url_for('settings'))
 
 
+@app.route('/api/ai-suggestions', methods=['POST'])
+@login_required
+def ai_suggestions():
+    """Get AI-powered keyword and category suggestions from OpenAI"""
+    try:
+        import requests as req
+
+        data = request.json
+        icp = data.get('icp', '').strip()
+
+        if not icp:
+            return jsonify({"error": "Please provide a product research goal"}), 400
+
+        api_key = get_setting('openai_api_key')
+        if not api_key:
+            return jsonify({"error": "OpenAI API key not configured. Please add it in Settings."}), 400
+
+        # Get available category keys for context
+        from amazon_categories import get_all_categories
+        available_cats = list(get_all_categories().keys())
+
+        prompt = f"""Based on the following Amazon product research goal, suggest search keywords and Amazon categories to scrape.
+
+Research Goal: {icp}
+
+Available Amazon categories: {', '.join(available_cats)}
+
+Provide your response in this exact JSON format:
+{{
+    "keywords": ["keyword1", "keyword2", ...],
+    "categories": ["category_key1", "category_key2", ...]
+}}
+
+Rules:
+- Keywords should be Amazon product search terms (e.g., "ashwagandha supplement", "turmeric curcumin", "resistance bands")
+- Provide up to 30 relevant keywords
+- Categories must be from the available categories list above
+- Provide 1-5 matching categories
+- Focus on keywords that would reveal competitive landscape and brand opportunities
+- Only return the JSON object, no other text"""
+
+        response = req.post(
+            'https://api.openai.com/v1/chat/completions',
+            headers={
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json'
+            },
+            json={
+                'model': 'gpt-4o-mini',
+                'messages': [
+                    {'role': 'system', 'content': 'You are a helpful assistant that provides Amazon product research suggestions. Always respond with valid JSON only.'},
+                    {'role': 'user', 'content': prompt}
+                ],
+                'temperature': 0.7,
+                'max_tokens': 2000
+            },
+            timeout=60
+        )
+
+        if response.status_code != 200:
+            error_msg = response.json().get('error', {}).get('message', 'Unknown error')
+            return jsonify({"error": f"OpenAI API error: {error_msg}"}), 500
+
+        result = response.json()
+        content = result['choices'][0]['message']['content'].strip()
+
+        # Parse JSON from response (handle markdown code blocks)
+        if content.startswith('```'):
+            content = content.split('```')[1]
+            if content.startswith('json'):
+                content = content[4:]
+        content = content.strip()
+
+        suggestions = json.loads(content)
+
+        keywords = suggestions.get('keywords', [])
+        categories = suggestions.get('categories', [])
+
+        if not isinstance(keywords, list):
+            keywords = []
+        if not isinstance(categories, list):
+            categories = []
+
+        # Validate categories against available ones
+        categories = [c for c in categories if c in available_cats]
+
+        return jsonify({
+            "success": True,
+            "keywords": keywords,
+            "categories": categories,
+            "keyword_count": len(keywords),
+            "category_count": len(categories)
+        })
+
+    except json.JSONDecodeError as e:
+        return jsonify({"error": f"Failed to parse AI response: {str(e)}"}), 500
+    except Exception as e:
+        if 'Timeout' in str(type(e).__name__):
+            return jsonify({"error": "OpenAI API request timed out. Please try again."}), 500
+        return jsonify({"error": str(e)}), 500
+
+
 # ============================================================
 # Amazon-specific API Routes
 # ============================================================
@@ -801,6 +903,33 @@ def download_results():
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/delete-file', methods=['DELETE'])
+@login_required
+def delete_file():
+    """Delete a specific result file"""
+    try:
+        filename = request.args.get('file')
+        if not filename:
+            return jsonify({"error": "No filename specified"}), 400
+
+        # Security: validate filename pattern
+        valid_prefixes = ('products_', 'brands_', 'results_', 'scrape_results_')
+        valid_suffixes = ('.csv', '.json', '.zip')
+        if not any(filename.startswith(p) for p in valid_prefixes):
+            return jsonify({"error": "Invalid filename"}), 400
+        if not any(filename.endswith(s) for s in valid_suffixes):
+            return jsonify({"error": "Invalid file type"}), 400
+
+        filepath = os.path.join(os.getcwd(), os.path.basename(filename))
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            return jsonify({"success": True, "message": f"Deleted {filename}"})
+        else:
+            return jsonify({"error": "File not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/download-all')
 @login_required
