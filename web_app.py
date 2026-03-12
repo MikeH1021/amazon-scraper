@@ -838,6 +838,7 @@ def start_scrape():
 def stop_scrape():
     """Stop current scraping job"""
     scraper_state["running"] = False
+    scraper_state["phase"] = "idle"
     if scraper_state.get("current_scraper"):
         try:
             scraper_state["current_scraper"].should_stop = True
@@ -845,6 +846,7 @@ def stop_scrape():
             pass
     shared = get_shared_state()
     shared["running"] = False
+    shared["phase"] = "idle"
     set_shared_state(shared)
     return jsonify({"success": True, "message": "Scraper stopped"})
 
@@ -1244,14 +1246,7 @@ async def run_scraper(searches, max_pages, detail_pages, use_proxies, concurrent
 
         logger.info(f"Post-processing {len(all_products)} products...")
 
-        # Apply filters
-        product_filter = ProductFilter(filters_config)
-        if product_filter.is_active():
-            before_count = len(all_products)
-            all_products = product_filter.apply(all_products)
-            logger.info(f"Filters applied: {before_count} -> {len(all_products)} products")
-
-        # Calculate BSR-based sales estimates
+        # Calculate BSR-based sales estimates on ALL products first
         primary_category = categories[0] if categories else "default"
         for p in all_products:
             bsr = p.get("bsr", 0)
@@ -1261,33 +1256,20 @@ async def run_scraper(searches, max_pages, detail_pages, use_proxies, concurrent
                 p["estimated_monthly_units"] = estimate_monthly_sales(bsr, cat)
                 p["estimated_monthly_revenue"] = estimate_monthly_revenue(bsr, cat, price)
 
-        # Aggregate by brand
-        aggregator = BrandAggregator(category_key=primary_category)
-        aggregator.add_products(all_products)
-        brand_stats = aggregator.get_brand_stats()
-
-        scraper_state["progress"]["brands_found"] = len(brand_stats)
-        shared = get_shared_state()
-        shared["progress"] = scraper_state["progress"].copy()
-        set_shared_state(shared)
-
-        logger.info(f"Aggregated into {len(brand_stats)} brands")
-
-        # Generate output files
+        # Save ALL unfiltered products first
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_files = []
+        fieldnames = [
+            "asin", "title", "brand", "price", "rating", "review_count",
+            "bsr", "is_prime", "is_fba", "product_type", "seller",
+            "estimated_monthly_units", "estimated_monthly_revenue",
+            "date_first_available", "variations", "category_breadcrumb",
+            "category_key", "search_keyword", "url", "image_url", "scraped_at",
+        ]
 
         if output_format in ("csv", "both"):
-            # Products CSV
             products_file = f"products_{timestamp}.csv"
             if all_products:
-                fieldnames = [
-                    "asin", "title", "brand", "price", "rating", "review_count",
-                    "bsr", "is_prime", "is_fba", "product_type", "seller",
-                    "estimated_monthly_units", "estimated_monthly_revenue",
-                    "date_first_available", "variations", "category_breadcrumb",
-                    "category_key", "search_keyword", "url", "image_url", "scraped_at",
-                ]
                 with open(products_file, 'w', newline='', encoding='utf-8') as f:
                     writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
                     writer.writeheader()
@@ -1297,6 +1279,33 @@ async def run_scraper(searches, max_pages, detail_pages, use_proxies, concurrent
                 output_files.append(products_file)
                 logger.success(f"Saved {len(all_products)} products to {products_file}")
 
+        # Apply filters (only affects brand aggregation, not product CSV)
+        filtered_products = all_products
+        product_filter = ProductFilter(filters_config)
+        if product_filter.is_active():
+            before_count = len(filtered_products)
+            filtered_products = product_filter.apply(filtered_products)
+            logger.info(f"Filters applied: {before_count} -> {len(filtered_products)} products (for brand aggregation)")
+
+        # Update progress
+        scraper_state["progress"]["products_found"] = len(all_products)
+        shared = get_shared_state()
+        shared["progress"] = scraper_state["progress"].copy()
+        set_shared_state(shared)
+
+        # Aggregate by brand (uses filtered products)
+        aggregator = BrandAggregator(category_key=primary_category)
+        aggregator.add_products(filtered_products)
+        brand_stats = aggregator.get_brand_stats()
+
+        scraper_state["progress"]["brands_found"] = len(brand_stats)
+        shared = get_shared_state()
+        shared["progress"] = scraper_state["progress"].copy()
+        set_shared_state(shared)
+
+        logger.info(f"Aggregated into {len(brand_stats)} brands")
+
+        if output_format in ("csv", "both"):
             # Brands CSV
             brands_file = f"brands_{timestamp}.csv"
             aggregator.save_brands_csv(brands_file)

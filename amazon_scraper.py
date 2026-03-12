@@ -454,6 +454,21 @@ class AmazonScraper:
         else:
             product["review_count"] = 0
 
+        # Brand - extract from search result "by BrandName" line
+        brand_elem = (
+            item.select_one('.a-row .a-size-base-plus.a-color-base')
+            or item.select_one('.a-row .a-size-base.a-link-normal[href*="brandtextbin"]')
+            or item.select_one('.a-row .a-size-base.a-link-normal[href*="/s?"]')
+            or item.select_one('h2 + .a-row .a-size-base')
+        )
+        if brand_elem:
+            brand_text = brand_elem.get_text(strip=True)
+            # Clean up "by BrandName" prefix if present
+            brand_text = re.sub(r'^by\s+', '', brand_text, flags=re.IGNORECASE)
+            product["brand"] = brand_text.strip()
+        else:
+            product["brand"] = ""
+
         # Image
         img_elem = item.select_one('img.s-image')
         product["image_url"] = img_elem.get("src", "") if img_elem else ""
@@ -484,8 +499,9 @@ class AmazonScraper:
         # Classify product type from title
         product["product_type"] = classify_product_type(product["title"])
 
-        # Placeholders for detail page data
-        product["brand"] = ""
+        # Placeholders for detail page data (brand already extracted above)
+        if not product.get("brand"):
+            product["brand"] = ""
         product["bsr"] = 0
         product["bullet_points"] = []
         product["seller"] = ""

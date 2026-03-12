@@ -1031,6 +1031,7 @@
             try {
                 await fetch('/api/stop-scrape', { method: 'POST' });
                 isRunning = false;
+                stopHyperspace();
                 document.getElementById('btnStart').disabled = false;
                 document.getElementById('btnStop').disabled = true;
             } catch (e) { console.error(e); }
@@ -1058,8 +1059,10 @@
             document.getElementById('statProducts').textContent = (p.products_found || 0).toLocaleString();
             document.getElementById('statBrands').textContent = (p.brands_found || 0).toLocaleString();
 
-            if (running || p.total_searches) {
+            if (running) {
                 document.getElementById('progressPanel').style.display = 'block';
+            } else if (phase === 'idle') {
+                document.getElementById('progressPanel').style.display = 'none';
             }
 
             // Progress stats
@@ -1083,6 +1086,7 @@
             // Button states
             if (!running && isRunning) {
                 isRunning = false;
+                stopHyperspace();
                 document.getElementById('btnStart').disabled = false;
                 document.getElementById('btnStop').disabled = true;
                 loadResultFiles();
@@ -1302,11 +1306,16 @@
             hyperspaceMode = true;
             document.getElementById('hyperspaceFlash').classList.add('active');
             document.getElementById('hyperspaceVignette').classList.add('active');
+            // Flash effect is brief, but vignette and star speed stay active
             setTimeout(() => {
-                hyperspaceMode = false;
                 document.getElementById('hyperspaceFlash').classList.remove('active');
-                document.getElementById('hyperspaceVignette').classList.remove('active');
-            }, 3000);
+            }, 800);
+        }
+
+        function stopHyperspace() {
+            hyperspaceMode = false;
+            document.getElementById('hyperspaceFlash').classList.remove('active');
+            document.getElementById('hyperspaceVignette').classList.remove('active');
         }
 
         window.addEventListener('resize', initStarfield);
@@ -1417,21 +1426,23 @@
         async function clearAllResults() {
             if (!confirm('Delete all result files and clear the results table?')) return;
 
-            const filesList = document.getElementById('filesList');
-            const links = filesList.querySelectorAll('a[href*="download"]');
-            for (const link of links) {
-                const url = new URL(link.href, window.location.origin);
-                const filename = url.searchParams.get('file');
-                if (filename) {
-                    try {
-                        await fetch('/api/delete-file?file=' + encodeURIComponent(filename), { method: 'DELETE' });
-                    } catch(e) {}
+            try {
+                const resp = await fetch('/api/list-results');
+                const data = await resp.json();
+                if (data.files) {
+                    for (const file of data.files) {
+                        await fetch('/api/delete-result', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ filename: file.filename })
+                        });
+                    }
                 }
-            }
+            } catch(e) { console.error(e); }
 
             document.getElementById('resultsBody').innerHTML = '';
             document.getElementById('resultsTableContainer').style.display = 'none';
-            filesList.innerHTML = '';
+            document.getElementById('filesList').innerHTML = '';
             document.getElementById('resultsPanel').style.display = 'none';
             brandResults = [];
             showNotification('success', 'All results cleared');
