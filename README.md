@@ -1,6 +1,6 @@
-# 🔍 Yellow Pages Scraper
+# 🔍 Amazon Scraper
 
-**Production-ready web scraper for generating B2B leads from Yellow Pages** with real-time monitoring, proxy rotation, and parallel processing.
+**Production-ready web scraper for generating B2B leads from Amazon** with real-time monitoring, proxy rotation, and parallel processing.
 
 ![Status](https://img.shields.io/badge/status-production--ready-success)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
@@ -10,20 +10,14 @@
 
 ## 🎯 What It Does
 
-Automatically extracts business contact information from Yellow Pages for lead generation:
+Automatically extracts business contact information from Amazon for lead generation:
 
-- ✅ **Business names** and **phone numbers**
-- ✅ **Full addresses** (street, city, state, ZIP)
-- ✅ **Websites** and **business categories
-- ✅ **Ratings** and **years in business**
-- ✅ **Organized by search category and location**
+- ✅ **Company names**
+- ✅ **Product Name** (street, city, state, ZIP)
+- ✅ **ASIN**
+- ✅ **Ratings**
+- ✅ **Organized by search category
 
-### Scale
-
-- **Small:** 500 businesses in 10 minutes
-- **Medium:** 25,000 businesses in 2 hours
-- **Large:** 100,000+ businesses in 3-4 hours (with parallel processing)
-- **Nationwide:** 200,000-250,000 unique businesses across 50 states
 
 ---
 
